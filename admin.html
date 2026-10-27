@@ -2,69 +2,472 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Delux Grill - لوحة الإدارة</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 750px; margin: 25px auto; padding: 16px; background: #f4f4f4; }
-    .panel { background: white; padding: 20px; border-radius: 10px; margin-bottom: 16px; }
-    input, textarea, button { box-sizing: border-box; width: 100%; padding: 12px; margin-top: 10px; font-size: 16px; }
-    textarea { min-height: 320px; direction: ltr; text-align: left; }
-    button { cursor: pointer; background: #a32020; color: white; border: 0; border-radius: 6px; }
-    #status { margin-top: 15px; padding: 12px; background: #fff4d6; overflow-wrap: anywhere; }
-    [hidden] { display: none !important; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delux Grill - إدارة المنيو</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+  --red: #a52222;
+  --bg: #f4f5f7;
+  --border: #ddd;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: #222;
+  font-family: Arial, sans-serif;
+}
+header {
+  background: #202020;
+  color: white;
+  padding: 20px 16px;
+}
+header h1 { margin: 0 0 8px; font-size: 25px; }
+header p { margin: 0; color: #ddd; }
+main { max-width: 900px; margin: auto; padding: 14px; }
+.card {
+  background: white;
+  padding: 16px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  border: 1px solid #e5e5e5;
+}
+h2 { font-size: 20px; margin-top: 0; }
+label {
+  display: block;
+  font-weight: bold;
+  margin: 12px 0 5px;
+}
+input, textarea, select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  background: white;
+}
+textarea { min-height: 75px; resize: vertical; }
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:disabled { opacity: .5; cursor: wait; }
+.primary { background: var(--red); color: white; }
+.dark { background: #333; color: white; }
+.light { background: #eee; color: #222; }
+.danger { background: #fee2e2; color: #a00; }
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.actions button { flex: 1; }
+.categories {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.category {
+  background: white;
+  border: 1px solid var(--border);
+  padding: 13px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  font-weight: bold;
+}
+.category.active {
+  background: var(--red);
+  color: white;
+  border-color: var(--red);
+}
+.item {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 13px;
+  margin-top: 10px;
+}
+.item-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+}
+.item-name { font-weight: bold; font-size: 17px; }
+.price { color: var(--red); font-weight: bold; white-space: nowrap; }
+.small { font-size: 13px; color: #666; line-height: 1.6; }
+#status {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #fff4d6;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+#editor, #logoutBtn { display: none; }
+.note { line-height: 1.7; color: #555; }
+@media (max-width: 480px) {
+  main { padding: 9px; }
+  .card { padding: 12px; }
+  .actions button { min-width: 100%; }
+}
+</style>
 </head>
+
 <body>
-  <h1>Delux Grill – لوحة الإدارة</h1>
+<header>
+  <h1>🍕 Delux Grill</h1>
+  <p>لوحة إدارة المطعم والمنيو</p>
+</header>
 
-  <div class="panel">
-    <h2>تسجيل الدخول</h2>
+<main>
+  <section class="card" id="loginCard">
+    <h2>🔐 تسجيل الدخول</h2>
     <form id="loginForm">
-      <input id="email" type="email" placeholder="البريد الإلكتروني" required>
-      <input id="password" type="password" placeholder="كلمة المرور" required>
-      <button type="submit">تسجيل الدخول</button>
-    </form>
-    <button id="logoutBtn" hidden>تسجيل الخروج</button>
-    <div id="status">جاري الاتصال...</div>
-  </div>
+      <label for="email">البريد الإلكتروني</label>
+      <input id="email" type="email" autocomplete="username" required>
 
-  <div class="panel" id="editor" hidden>
-    <h2>تعديل المنيو</h2>
-    <textarea id="menuData" spellcheck="false"></textarea>
-    <button id="loadBtn">تحميل المسودة</button>
-    <button id="saveBtn">حفظ المسودة</button>
-    <button id="publishBtn">نشر المنيو</button>
-  </div>
+      <label for="password">كلمة المرور</label>
+      <input id="password" type="password"
+             autocomplete="current-password" required>
+
+      <div class="actions">
+        <button class="primary" type="submit">تسجيل الدخول</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" id="editor">
+    <h2>📋 اختر القسم</h2>
+    <div class="categories" id="categories"></div>
+    <div class="actions">
+      <button class="primary" id="addBtn">＋ إضافة صنف جديد</button>
+    </div>
+    <p class="note">اختر القسم، ثم أضف الأصناف أو عدّلها أو احذفها.</p>
+  </section>
+
+  <section class="card" id="formCard" hidden>
+    <h2 id="formTitle">إضافة صنف</h2>
+    <form id="itemForm">
+      <label for="category">القسم</label>
+      <select id="category" required>
+        <option value="pizza">البيتزا</option>
+        <option value="burger">البرغر</option>
+        <option value="snack">السناك والبطاطا</option>
+        <option value="drinks">المشروبات</option>
+      </select>
+
+      <label for="nameAr">اسم الصنف بالعربي</label>
+      <input id="nameAr" required placeholder="مثلاً: بيتزا مارغريتا">
+
+      <label for="nameDe">اسم الصنف بالألماني</label>
+      <input id="nameDe" required placeholder="مثلاً: Pizza Margherita">
+
+      <label for="price">السعر باليورو (€)</label>
+      <input id="price" type="number" min="0" max="9999"
+             step="0.01" required placeholder="مثلاً: 8.50">
+
+      <label for="descriptionAr">الوصف بالعربي</label>
+      <textarea id="descriptionAr" placeholder="مكونات الصنف"></textarea>
+
+      <label for="descriptionDe">الوصف بالألماني</label>
+      <textarea id="descriptionDe" placeholder="Zutaten und Beschreibung"></textarea>
+
+      <label for="extrasAr">الإضافات بالعربي</label>
+      <input id="extrasAr" placeholder="جبنة إضافية، زيتون">
+
+      <label for="extrasDe">الإضافات بالألماني</label>
+      <input id="extrasDe" placeholder="Extra Käse, Oliven">
+
+      <label>
+        <input id="available" type="checkbox" checked
+               style="width:auto">
+        الصنف متوفر للبيع
+      </label>
+
+      <div class="actions">
+        <button class="primary" type="submit">حفظ الصنف</button>
+        <button class="light" type="button" id="cancelBtn">إلغاء</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" id="listCard">
+    <h2 id="listTitle">أصناف القسم</h2>
+    <div id="itemsList"></div>
+  </section>
+
+  <section class="card" id="publishCard" hidden>
+    <h2>💾 حفظ ونشر المنيو</h2>
+    <p class="note">
+      احفظ المسودة أولاً. عند النشر، تصبح النسخة الحالية هي النسخة المنشورة.
+    </p>
+    <div class="actions">
+      <button class="dark" id="saveBtn">حفظ المسودة</button>
+      <button class="primary" id="publishBtn">نشر المنيو</button>
+    </div>
+    <div class="actions">
+      <button class="light" id="reloadBtn">تحميل المسودة من جديد</button>
+      <button class="light" id="logoutBtn">تسجيل الخروج</button>
+    </div>
+  </section>
+
+  <div id="status" role="status">جاري تجهيز لوحة الإدارة...</div>
+</main>
 
 <script>
 const PROJECT_URL = "https://kweesbbghzvxjgwhdnqo.supabase.co";
 const PUBLISHABLE_KEY = "sb_publishable_QT_7w8KNYAfF1cpJytBhJw_ZjjxflPu";
 const ADMIN_UID = "b9b71c76-83d7-4ae2-bfbb-3584a951b58a";
 
-const statusBox = document.getElementById("status");
-const loginForm = document.getElementById("loginForm");
-const editor = document.getElementById("editor");
-const logoutBtn = document.getElementById("logoutBtn");
-const menuData = document.getElementById("menuData");
+const SECTION_INFO = {
+  pizza: { ar: "البيتزا", de: "Pizza" },
+  burger: { ar: "البرغر", de: "Burger" },
+  snack: { ar: "السناك والبطاطا", de: "Snacks und Pommes" },
+  drinks: { ar: "المشروبات", de: "Getränke" }
+};
 
 let client = null;
 let currentUser = null;
+let menu = {
+  restaurant: "Delux Grill Laatzen",
+  address: "Hildesheimer Str. 520, Laatzen",
+  currency: "EUR",
+  categories: [],
+  delivery: { enabled: true, fee: null },
+  languages: ["de", "ar", "tr", "en", "pl"]
+};
+let selectedCategory = "pizza";
+let editingId = null;
 
-function status(message) {
-  statusBox.textContent = message;
+const $ = id => document.getElementById(id);
+
+function showStatus(message) {
+  $("status").textContent = message;
 }
 
-function parseMenu() {
-  try {
-    return JSON.parse(menuData.value);
-  } catch {
-    throw new Error("صيغة المنيو غير صحيحة. تأكد من JSON.");
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function getCategories() {
+  if (!Array.isArray(menu.categories)) menu.categories = [];
+
+  return Object.keys(SECTION_INFO).map(key => {
+    let existing = menu.categories.find(c =>
+      c && (c.id === key || c.slug === key ||
+            c.nameAr === SECTION_INFO[key].ar ||
+            c.name === SECTION_INFO[key].de)
+    );
+
+    if (!existing) {
+      existing = {
+        id: key,
+        nameAr: SECTION_INFO[key].ar,
+        name: SECTION_INFO[key].de,
+        items: []
+      };
+      menu.categories.push(existing);
+    }
+
+    if (!Array.isArray(existing.items)) existing.items = [];
+    existing.id = key;
+    existing.nameAr = SECTION_INFO[key].ar;
+    existing.name = SECTION_INFO[key].de;
+    return existing;
+  });
+}
+
+function getItems() {
+  const category = getCategories().find(c => c.id === selectedCategory);
+  return category.items;
+}
+
+function renderCategories() {
+  $("categories").innerHTML = Object.entries(SECTION_INFO).map(([id, info]) =>
+    `<button type="button" class="category ${id === selectedCategory ? "active" : ""}"
+      data-category="${id}">${escapeHtml(info.ar)}</button>`
+  ).join("");
+
+  $("categories").querySelectorAll("[data-category]").forEach(button => {
+    button.addEventListener("click", () => {
+      selectedCategory = button.dataset.category;
+      $("category").value = selectedCategory;
+      renderCategories();
+      renderItems();
+      closeForm();
+    });
+  });
+}
+
+function renderItems() {
+  const items = getItems();
+  $("listTitle").textContent =
+    "أصناف " + SECTION_INFO[selectedCategory].ar;
+
+  if (!items.length) {
+    $("itemsList").innerHTML =
+      '<p class="note">لا توجد أصناف في هذا القسم. اضغط «إضافة صنف جديد» للبدء.</p>';
+    return;
   }
+
+  $("itemsList").innerHTML = items.map((item, index) => {
+    const nameAr = item.nameAr || item.name || "بدون اسم";
+    const nameDe = item.nameDe || "";
+    const price = Number(item.price ?? 0).toFixed(2);
+    const extras = Array.isArray(item.extrasAr)
+      ? item.extrasAr.join("، ")
+      : (item.extrasAr || "");
+
+    return `
+      <div class="item">
+        <div class="item-top">
+          <div>
+            <div class="item-name">${escapeHtml(nameAr)}</div>
+            <div>${escapeHtml(nameDe)}</div>
+            <div class="small">
+              ${item.available === false ? "غير متوفر" : "متوفر"}
+              ${extras ? " • إضافات: " + escapeHtml(extras) : ""}
+            </div>
+          </div>
+          <div class="price">${price} €</div>
+        </div>
+        <div class="actions">
+          <button type="button" class="dark" data-edit="${index}">✏️ تعديل</button>
+          <button type="button" class="danger" data-delete="${index}">🗑️ حذف</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  $("itemsList").querySelectorAll("[data-edit]").forEach(button => {
+    button.addEventListener("click", () =>
+      openForm(Number(button.dataset.edit))
+    );
+  });
+
+  $("itemsList").querySelectorAll("[data-delete]").forEach(button => {
+    button.addEventListener("click", () =>
+      deleteItem(Number(button.dataset.delete))
+    );
+  });
 }
 
-async function loadDraft() {
+function openForm(index = null) {
+  editingId = index;
+  $("formCard").hidden = false;
+  $("category").value = selectedCategory;
+
+  const item = index === null ? null : getItems()[index];
+
+  $("formTitle").textContent = item ? "تعديل الصنف" : "إضافة صنف جديد";
+  $("nameAr").value = item?.nameAr || item?.name || "";
+  $("nameDe").value = item?.nameDe || "";
+  $("price").value = item?.price ?? "";
+  $("descriptionAr").value = item?.descriptionAr || "";
+  $("descriptionDe").value = item?.descriptionDe || "";
+  $("extrasAr").value = Array.isArray(item?.extrasAr)
+    ? item.extrasAr.join(", ") : (item?.extrasAr || "");
+  $("extrasDe").value = Array.isArray(item?.extrasDe)
+    ? item.extrasDe.join(", ") : (item?.extrasDe || "");
+  $("available").checked = item?.available !== false;
+
+  $("formCard").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeForm() {
+  $("formCard").hidden = true;
+  $("itemForm").reset();
+  editingId = null;
+}
+
+$("addBtn").addEventListener("click", () => openForm());
+$("cancelBtn").addEventListener("click", closeForm);
+
+$("category").addEventListener("change", () => {
+  selectedCategory = $("category").value;
+});
+
+$("itemForm").addEventListener("submit", event => {
+  event.preventDefault();
+
+  const price = Number($("price").value);
+  if (!Number.isFinite(price) || price < 0) {
+    showStatus("أدخل سعراً صحيحاً.");
+    return;
+  }
+
+  selectedCategory = $("category").value;
+  const items = getItems();
+
+  const item = {
+    id: editingId === null
+      ? (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()))
+      : items[editingId].id || String(Date.now()),
+    nameAr: $("nameAr").value.trim(),
+    nameDe: $("nameDe").value.trim(),
+    price,
+    descriptionAr: $("descriptionAr").value.trim(),
+    descriptionDe: $("descriptionDe").value.trim(),
+    extrasAr: $("extrasAr").value.split(",").map(x => x.trim()).filter(Boolean),
+    extrasDe: $("extrasDe").value.split(",").map(x => x.trim()).filter(Boolean),
+    available: $("available").checked
+  };
+
+  if (!item.nameAr || !item.nameDe) {
+    showStatus("أدخل اسم الصنف بالعربي والألماني.");
+    return;
+  }
+
+  if (editingId === null) {
+    items.push(item);
+  } else {
+    items[editingId] = item;
+  }
+
+  closeForm();
+  renderCategories();
+  renderItems();
+  showStatus("تم تحديث الصنف في الصفحة. اضغط «حفظ المسودة» لحفظه في قاعدة البيانات.");
+});
+
+function deleteItem(index) {
+  const item = getItems()[index];
+  if (!item) return;
+
+  if (!confirm("هل تريد حذف «" + (item.nameAr || item.name) + "»؟")) return;
+
+  getItems().splice(index, 1);
+  renderItems();
+  showStatus("تم حذف الصنف من القائمة الحالية. اضغط «حفظ المسودة» لحفظ التغيير.");
+}
+
+function normalizeMenu(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("بيانات المنيو غير صحيحة.");
+  }
+  menu = data;
+  getCategories();
+  renderCategories();
+  renderItems();
+}
+
+async function loadMenu() {
+  if (!currentUser || currentUser.id !== ADMIN_UID) return;
+
   try {
     const { data, error } = await client
       .from("menu_drafts")
@@ -75,99 +478,122 @@ async function loadDraft() {
     if (error) throw error;
 
     if (data?.content) {
-      menuData.value = JSON.stringify(data.content, null, 2);
-      status("تم تحميل المسودة.");
+      normalizeMenu(data.content);
+      showStatus("تم تحميل المسودة المحفوظة.");
       return;
     }
 
     const response = await fetch("./menu.json", { cache: "no-store" });
     if (!response.ok) throw new Error("تعذّر تحميل menu.json.");
 
-    menuData.value = JSON.stringify(await response.json(), null, 2);
-    status("تم تحميل المنيو الأساسي. يمكنك تعديله وحفظه.");
+    normalizeMenu(await response.json());
+    showStatus("تم تحميل المنيو الأساسي. أضف الأصناف ثم احفظ المسودة.");
   } catch (error) {
-    status("خطأ في تحميل المنيو: " + error.message);
+    showStatus("خطأ في تحميل المنيو: " + error.message);
   }
 }
 
-async function saveDraft() {
+async function saveToTable(table) {
+  if (!currentUser || currentUser.id !== ADMIN_UID) {
+    throw new Error("سجّل الدخول بحساب الإدارة.");
+  }
+
+  const { error } = await client.from(table).upsert({
+    id: 1,
+    content: menu,
+    updated_at: new Date().toISOString()
+  });
+
+  if (error) throw error;
+}
+
+$("saveBtn").addEventListener("click", async () => {
+  $("saveBtn").disabled = true;
   try {
-    const content = parseMenu();
-    const { error } = await client.from("menu_drafts").upsert({
-      id: 1,
-      content,
-      updated_at: new Date().toISOString()
-    });
-    if (error) throw error;
-    status("تم حفظ المسودة بنجاح.");
+    await saveToTable("menu_drafts");
+    showStatus("تم حفظ المسودة بنجاح. لم يتم نشرها للزبائن.");
   } catch (error) {
-    status("فشل حفظ المسودة: " + error.message);
+    showStatus("فشل حفظ المسودة: " + error.message);
+  } finally {
+    $("saveBtn").disabled = false;
   }
-}
+});
 
-async function publishMenu() {
+$("publishBtn").addEventListener("click", async () => {
+  if (!confirm("هل تريد نشر المنيو الحالي؟")) return;
+
+  $("publishBtn").disabled = true;
   try {
-    if (!confirm("هل تريد نشر المنيو؟")) return;
-    const content = parseMenu();
-    const { error } = await client.from("published_menu").upsert({
-      id: 1,
-      content,
-      updated_at: new Date().toISOString()
-    });
-    if (error) throw error;
-    status("تم النشر في قاعدة البيانات. يجب أن تكون صفحة الزبائن مبرمجة لقراءة published_menu.");
+    await saveToTable("menu_drafts");
+    await saveToTable("published_menu");
+    showStatus("تم حفظ المسودة ونشر المنيو في قاعدة البيانات. يجب أن تقرأ صفحة الزبائن جدول published_menu لعرض التغييرات.");
   } catch (error) {
-    status("فشل النشر: " + error.message);
+    showStatus("فشلت العملية: " + error.message);
+  } finally {
+    $("publishBtn").disabled = false;
   }
-}
+});
 
-loginForm.addEventListener("submit", async (event) => {
+$("reloadBtn").addEventListener("click", async () => {
+  if (confirm("سيتم استبدال التعديلات الحالية بآخر مسودة محفوظة. هل تريد المتابعة؟")) {
+    await loadMenu();
+  }
+});
+
+$("loginForm").addEventListener("submit", async event => {
   event.preventDefault();
+
   if (!client) {
-    status("الاتصال غير جاهز. تحقق من المفتاح العام.");
+    showStatus("الاتصال غير جاهز. تحقق من المفتاح العام.");
     return;
   }
 
-  status("جاري تسجيل الدخول...");
+  showStatus("جاري تسجيل الدخول...");
+
   try {
     const { data, error } = await client.auth.signInWithPassword({
-      email: document.getElementById("email").value.trim(),
-      password: document.getElementById("password").value
+      email: $("email").value.trim(),
+      password: $("password").value
     });
+
     if (error) throw error;
 
     if (!data.user || data.user.id !== ADMIN_UID) {
       await client.auth.signOut();
-      status("هذا الحساب غير مخوّل للإدارة.");
+      showStatus("هذا الحساب ليس حساب الإدارة المسموح له.");
       return;
     }
 
     currentUser = data.user;
-    loginForm.hidden = true;
-    logoutBtn.hidden = false;
-    editor.hidden = false;
-    await loadDraft();
+    $("loginCard").hidden = true;
+    $("editor").style.display = "block";
+    $("listCard").hidden = false;
+    $("publishCard").hidden = false;
+    $("logoutBtn").style.display = "block";
+
+    await loadMenu();
   } catch (error) {
-    status("فشل تسجيل الدخول: " + error.message);
+    showStatus("فشل تسجيل الدخول: " + error.message);
   }
 });
 
-logoutBtn.addEventListener("click", async () => {
-  await client.auth.signOut();
+$("logoutBtn").addEventListener("click", async () => {
+  if (client) await client.auth.signOut();
   currentUser = null;
-  loginForm.hidden = false;
-  logoutBtn.hidden = true;
-  editor.hidden = true;
-  status("تم تسجيل الخروج.");
+  $("loginCard").hidden = false;
+  $("editor").style.display = "none";
+  $("listCard").hidden = true;
+  $("publishCard").hidden = true;
+  $("logoutBtn").style.display = "none";
+  closeForm();
+  showStatus("تم تسجيل الخروج.");
 });
 
-document.getElementById("loadBtn").addEventListener("click", loadDraft);
-document.getElementById("saveBtn").addEventListener("click", saveDraft);
-document.getElementById("publishBtn").addEventListener("click", publishMenu);
-
 async function initialize() {
+  $("listCard").hidden = true;
+
   if (!window.supabase) {
-    status("تعذّر تحميل مكتبة Supabase. تحقق من الإنترنت.");
+    showStatus("تعذّر تحميل مكتبة Supabase. تحقق من اتصال الإنترنت.");
     return;
   }
 
@@ -179,21 +605,23 @@ async function initialize() {
     if (data.session?.user) {
       if (data.session.user.id !== ADMIN_UID) {
         await client.auth.signOut();
-        status("هذا الحساب غير مخوّل للإدارة.");
+        showStatus("هذا الحساب غير مخوّل للإدارة.");
         return;
       }
 
       currentUser = data.session.user;
-      loginForm.hidden = true;
-      logoutBtn.hidden = false;
-      editor.hidden = false;
-      await loadDraft();
+      $("loginCard").hidden = true;
+      $("editor").style.display = "block";
+      $("listCard").hidden = false;
+      $("publishCard").hidden = false;
+      $("logoutBtn").style.display = "block";
+      await loadMenu();
     } else {
-      status("الاتصال جاهز. أدخل بيانات حساب الإدارة.");
+      showStatus("الاتصال جاهز. سجّل الدخول للبدء.");
     }
   } catch (error) {
     client = null;
-    status("خطأ في الاتصال: " + error.message);
+    showStatus("خطأ في الاتصال: " + error.message);
   }
 }
 
