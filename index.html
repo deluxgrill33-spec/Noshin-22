@@ -1,1 +1,326 @@
 
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#171717">
+<title>Delux Grill Laatzen | Online bestellen</title>
+<style>
+:root{--dark:#191919;--gold:#f5b82e;--bg:#f6f4ef;--white:#fff}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#222}
+header{background:var(--dark);color:white;text-align:center;padding:24px 12px}
+header h1{margin:0;color:var(--gold);font-size:32px}
+header p{margin:8px 0 0}
+nav{background:#292929;padding:12px;text-align:center;color:white}
+select,input,textarea{font:inherit;padding:11px;border:1px solid #ccc;border-radius:8px;max-width:100%}
+main{max-width:850px;margin:auto;padding:15px}
+section{background:white;padding:16px;margin-bottom:15px;border-radius:12px}
+h2{font-size:21px;color:#9b4d00}
+.category-title{border-bottom:2px solid var(--gold);padding-bottom:8px}
+.item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 0;border-bottom:1px solid #eee}
+.item-name{flex:1}
+.price{font-weight:bold;white-space:nowrap}
+button{border:0;border-radius:8px;padding:10px 12px;font-size:15px;cursor:pointer}
+.add,.primary{background:var(--gold);color:#171717;font-weight:bold}
+.remove{background:#eee}
+.cart-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #eee}
+.field{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.field input,.field textarea,.field select{width:100%}
+.total{font-size:21px;font-weight:bold}
+.primary{width:100%;padding:14px;font-size:17px}
+.muted{color:#666;font-size:13px;line-height:1.5}
+footer{background:var(--dark);color:white;text-align:center;padding:22px}
+[dir=rtl] .item,[dir=rtl] .cart-row{flex-direction:row-reverse}
+[dir=rtl] body{text-align:right}
+@media(max-width:480px){main{padding:9px}.item{gap:6px}.item button{padding:9px 7px;font-size:14px}.item-name{font-size:14px}}
+</style>
+</head>
+<body>
+<header>
+<h1>Delux Grill</h1>
+<p>Laatzen · Frisch und lecker</p>
+<p>Hildesheimer Str. 520, Laatzen</p>
+</header>
+
+<nav>
+<label id="language-label" for="language">Sprache:</label>
+<select id="language" onchange="changeLanguage(this.value)">
+<option value="de">🇩🇪 Deutsch</option>
+<option value="ar">🇸🇦 العربية</option>
+<option value="tr">🇹🇷 Türkçe</option>
+<option value="en">🇬🇧 English</option>
+<option value="pl">🇵🇱 Polski</option>
+</select>
+</nav>
+
+<main>
+<section>
+<h2 id="welcome"></h2>
+<p id="intro"></p>
+<p class="muted" id="language-note"></p>
+</section>
+
+<div id="menu"></div>
+
+<section>
+<h2 id="cart-heading">🛒 Warenkorb</h2>
+<div id="cart-items"></div>
+<p class="total"><span id="total-label">Gesamt</span>: <span id="total">0,00 €</span></p>
+<button class="remove" onclick="clearCart()" id="clear-button">Warenkorb leeren</button>
+</section>
+
+<section>
+<h2 id="details-heading">Bestelldaten</h2>
+<div class="field">
+<label id="name-label" for="customer-name">Name</label>
+<input id="customer-name" autocomplete="name" required>
+</div>
+<div class="field">
+<label id="phone-label" for="customer-phone">Telefonnummer</label>
+<input id="customer-phone" type="tel" autocomplete="tel" required>
+</div>
+<div class="field">
+<label id="method-label" for="method">Bestellart</label>
+<select id="method" onchange="toggleAddress()">
+<option value="pickup" id="pickup-option">Abholung im Restaurant</option>
+<option value="delivery" id="delivery-option">Lieferung</option>
+</select>
+</div>
+<div class="field" id="address-field" hidden>
+<label id="address-label" for="address">Lieferadresse</label>
+<textarea id="address" autocomplete="street-address" rows="2"></textarea>
+</div>
+<div class="field">
+<label id="note-label" for="customer-note">Zusätzliche Hinweise</label>
+<textarea id="customer-note" rows="2"></textarea>
+</div>
+<button class="primary" onclick="sendOrder()" id="order-button">Über WhatsApp bestellen</button>
+<p class="muted" id="order-note">Deine Bestellung wird in WhatsApp geöffnet. Du musst sie dort selbst absenden.</p>
+</section>
+</main>
+
+<footer>
+<strong>Delux Grill Laatzen</strong>
+<p>Hildesheimer Str. 520, Laatzen</p>
+</footer>
+
+<script>
+const WHATSAPP_NUMBER = "491029324412";
+
+const ui = {
+de:{
+welcome:"Willkommen bei Delux Grill!",intro:"Wähle deine Lieblingsgerichte und bestelle bequem online.",
+language:"Sprache:",total:"Gesamt",cart:"🛒 Warenkorb",clear:"Warenkorb leeren",
+add:"Hinzufügen",remove:"Entfernen",details:"Bestelldaten",name:"Name",
+phone:"Telefonnummer",method:"Bestellart",pickup:"Abholung im Restaurant",
+delivery:"Lieferung",address:"Lieferadresse",note:"Zusätzliche Hinweise",
+order:"Über WhatsApp bestellen",orderNote:"Deine Bestellung wird in WhatsApp geöffnet. Du musst sie dort selbst absenden.",
+empty:"Bitte füge zuerst einen Artikel hinzu.",fill:"Bitte fülle Name und Telefonnummer aus.",
+addressMissing:"Bitte gib deine Lieferadresse ein.",categories:["Pizza · 28 cm","Calzone","Pide","Döner & Lahmacun","Falafel & Halloumi","Burger","Snacks","Salate"],
+languageNote:"Die Sprache wird anhand deiner Browsersprache ausgewählt. Du kannst sie jederzeit ändern."
+},
+ar:{
+welcome:"أهلاً وسهلاً بكم في ديلوكس!",intro:"اختر أطباقك المفضلة واطلب بسهولة عبر الإنترنت.",
+language:"اللغة:",total:"المجموع",cart:"🛒 سلة الطلبات",clear:"إفراغ السلة",
+add:"أضف",remove:"حذف",details:"بيانات الطلب",name:"الاسم",
+phone:"رقم الهاتف",method:"طريقة الطلب",pickup:"استلام من المطعم",
+delivery:"توصيل",address:"عنوان التوصيل",note:"ملاحظات إضافية",
+order:"الطلب عبر واتساب",orderNote:"سيفتح الطلب في واتساب، ويجب أن تضغط إرسال بنفسك.",
+empty:"أضف صنفاً إلى السلة أولاً.",fill:"يرجى إدخال الاسم ورقم الهاتف.",
+addressMissing:"يرجى إدخال عنوان التوصيل.",categories:["بيتزا · 28 سم","كالزوني","بيده","دونر ولحم بعجين","فلافل وحلوم","برغر","وجبات خفيفة","سلطات"],
+languageNote:"يتم اختيار اللغة حسب لغة المتصفح، ويمكنك تغييرها في أي وقت."
+},
+tr:{
+welcome:"Delux Grill'e hoş geldiniz!",intro:"Favori yemeklerinizi seçin ve kolayca sipariş verin.",
+language:"Dil:",total:"Toplam",cart:"🛒 Sepet",clear:"Sepeti boşalt",
+add:"Ekle",remove:"Sil",details:"Sipariş bilgileri",name:"Ad",
+phone:"Telefon numarası",method:"Sipariş türü",pickup:"Restorandan teslim alma",
+delivery:"Teslimat",address:"Teslimat adresi",note:"Ek notlar",
+order:"WhatsApp ile sipariş ver",orderNote:"Sipariş WhatsApp'ta açılır. Gönder tuşuna sizin basmanız gerekir.",
+empty:"Lütfen önce sepete ürün ekleyin.",fill:"Lütfen adınızı ve telefon numaranızı girin.",
+addressMissing:"Lütfen teslimat adresini girin.",categories:["Pizza · 28 cm","Calzone","Pide","Döner ve Lahmacun","Falafel ve Hellim","Burger","Atıştırmalıklar","Salatalar"],
+languageNote:"Dil tarayıcı dilinize göre seçilir. İstediğiniz zaman değiştirebilirsiniz."
+},
+en:{
+welcome:"Welcome to Delux Grill!",intro:"Choose your favourite dishes and order online.",
+language:"Language:",total:"Total",cart:"🛒 Your basket",clear:"Clear basket",
+add:"Add",remove:"Remove",details:"Order details",name:"Name",
+phone:"Phone number",method:"Order method",pickup:"Restaurant pickup",
+delivery:"Delivery",address:"Delivery address",note:"Additional notes",
+order:"Order via WhatsApp",orderNote:"Your order opens in WhatsApp. You must press Send yourself.",
+empty:"Please add an item first.",fill:"Please enter your name and phone number.",
+addressMissing:"Please enter your delivery address.",categories:["Pizza · 28 cm","Calzone","Pide","Döner & Lahmacun","Falafel & Halloumi","Burgers","Snacks","Salads"],
+languageNote:"The language is selected using your browser language. You can change it anytime."
+},
+pl:{
+welcome:"Witamy w Delux Grill!",intro:"Wybierz ulubione dania i zamów online.",
+language:"Język:",total:"Razem",cart:"🛒 Koszyk",clear:"Wyczyść koszyk",
+add:"Dodaj",remove:"Usuń",details:"Dane zamówienia",name:"Imię",
+phone:"Numer telefonu",method:"Sposób zamówienia",pickup:"Odbiór w restauracji",
+delivery:"Dostawa",address:"Adres dostawy",note:"Dodatkowe uwagi",
+order:"Zamów przez WhatsApp",orderNote:"Zamówienie otworzy się w WhatsApp. Musisz samodzielnie nacisnąć Wyślij.",
+empty:"Najpierw dodaj produkt do koszyka.",fill:"Podaj imię i numer telefonu.",
+addressMissing:"Podaj adres dostawy.",categories:["Pizza · 28 cm","Calzone","Pide","Döner i lahmacun","Falafel i halloumi","Burgery","Przekąski","Sałatki"],
+languageNote:"Język jest wybierany na podstawie języka przeglądarki. Możesz go zmienić w dowolnym momencie."
+}
+};
+
+// Kategorie und Preise aus der aktuellen Speisekarte.
+const products = [
+["Pizza","Margherita",8],["Pizza","Tonno",10],["Pizza","Delux",10],
+["Pizza","Salami",10],["Pizza","Putenschinken",10],["Pizza","Hawaii",10],
+["Pizza","Funghi",10],["Pizza","Fiori",10],["Pizza","Sucuk",10],
+["Pizza","Döner (Kalb/Hähnchen)",10],["Pizza","BBQ",10],["Pizza","Picante",10],
+["Pizza","Frutti di Mare",10],["Pizza","Garnelen",10],["Pizza","Arsana",10],
+["Pizza","Gleidi",10],["Pizza","Veggie",10],["Pizza","Aras",10],
+["Pizza","MIX",10],["Pizza","Pizzabrötchen (6 Stück)",8],
+["Pizza","Party-Pizza 50 cm (4 Zutaten)",28],
+
+["Calzone","Calzone Schinken",10],["Calzone","Calzone Salami",10],
+["Calzone","Calzone Döner",10],["Calzone","Calzone Tonno",10],
+["Calzone","Calzone Fungia",10],["Calzone","Calzone Delux Spezial",10],
+
+["Pide","Pide Käse",8],["Pide","Pide Mett & Käse",9.5],
+["Pide","Pide Sucuk & Käse",9.5],["Pide","Pide Dönerfleisch & Käse",9.5],
+["Pide","Pide Weichkäse & Käse",9.5],["Pide","Pide Gemüse",9.5],
+["Pide","Pide XL (2 Beilagen)",14],
+
+["Döner","Dönertasche",7],["Döner","Dönertasche BIG",9],
+["Döner","Döner-Rolle",8],["Döner","Dönerteller klein",10],
+["Döner","Dönerteller groß",12],["Döner","Überbackener Döner",8.5],
+["Döner","Döner-Box klein",6],["Döner","Döner-Box groß",7],
+["Döner","Lahmacun",4],["Döner","Lahmacun mit Salat",8],
+["Döner","Lahmacun mit Döner",9],
+
+["Falafel","Falafel Tasche",5.5],["Falafel","Falafel Rolle",6.5],
+["Falafel","Falafel Box",5],["Falafel","Falafel Teller",7.5],
+["Falafel","Vegetarische Tasche",5],["Falafel","Vegetarische Rolle",6],
+["Falafel","Halloumi Tasche",6],["Falafel","Halloumi Rolle",7],
+["Falafel","Halloumi mit Falafel Rolle",8.5],
+
+["Burger","Hamburger (100 g)",7],["Burger","Big Burger (200 g)",9],
+["Burger","Cheeseburger (100 g)",8],["Burger","Chickenburger",7],
+
+["Snacks","Nuggets (6 Stück) mit Pommes",7.5],
+["Snacks","Pommes klein",4.5],["Snacks","Pommes groß",5.5],
+["Snacks","Hähnchenschnitzel mit Jägersauce, Pommes & Salat",8],
+["Snacks","Currywurst mit Pommes & Currysauce",7.5],
+["Snacks","Mozzarella Sticks (6 Stück) mit Pommes",5.5],
+["Snacks","Zigarrenbörek (5 Stück) mit Tzatziki",6],
+["Snacks","Weinblätter (6 Stück) mit Salat & Tzatziki",4.5],
+["Snacks","Kinder-Box",8],
+
+["Salads","Thunfischsalat",7.5],["Salads","Dönersalat",8.5],
+["Salads","Hirsesalat",7.5]
+];
+
+const categoryMap = {
+"Pizza":0,"Calzone":1,"Pide":2,"Döner":3,"Falafel":4,
+"Burger":5,"Snacks":6,"Salads":7
+};
+
+let lang = (navigator.language || "de").slice(0,2).toLowerCase();
+if (!ui[lang]) lang = "de";
+let cart = [];
+
+function money(n){
+ return n.toLocaleString(lang==="de"?"de-DE":lang==="ar"?"ar":"en-IE",{style:"currency",currency:"EUR"});
+}
+function changeLanguage(value){
+ lang=value;
+ document.documentElement.lang=lang;
+ document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+ document.getElementById("language").value=lang;
+ const t=ui[lang];
+ const set=(id,text)=>document.getElementById(id).textContent=text;
+ set("language-label",t.language);set("welcome",t.welcome);
+ set("intro",t.intro);set("language-note",t.languageNote);
+ set("cart-heading",t.cart);set("total-label",t.total);
+ set("clear-button",t.clear);set("details-heading",t.details);
+ set("name-label",t.name);set("phone-label",t.phone);
+ set("method-label",t.method);set("pickup-option",t.pickup);
+ set("delivery-option",t.delivery);set("address-label",t.address);
+ set("note-label",t.note);set("order-button",t.order);
+ set("order-note",t.orderNote);
+ renderMenu();renderCart();
+}
+function renderMenu(){
+ const t=ui[lang];
+ const groups=["Pizza","Calzone","Pide","Döner","Falafel","Burger","Snacks","Salads"];
+ document.getElementById("menu").innerHTML=groups.map((group,gi)=>{
+  const rows=products.map((p,i)=>({p,i})).filter(x=>x.p[0]===group);
+  return `<section><h2 class="category-title">${t.categories[gi]}</h2>`+
+  rows.map(({p,i})=>`<div class="item">
+   <span class="item-name">${escapeHTML(p[1])}</span>
+   <span class="price">${money(p[2])}</span>
+   <button class="add" onclick="addItem(${i})">${t.add}</button>
+  </div>`).join("")+"</section>";
+ }).join("");
+}
+function escapeHTML(s){
+ return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function addItem(i){
+ const found=cart.find(x=>x.i===i);
+ if(found)found.qty++;else cart.push({i,qty:1});
+ renderCart();
+}
+function changeQty(i,delta){
+ const row=cart.find(x=>x.i===i);
+ if(!row)return;
+ row.qty+=delta;
+ if(row.qty<=0)cart=cart.filter(x=>x.i!==i);
+ renderCart();
+}
+function clearCart(){cart=[];renderCart();}
+function renderCart(){
+ const t=ui[lang];
+ document.getElementById("cart-items").innerHTML=cart.map(row=>{
+  const p=products[row.i];
+  return `<div class="cart-row">
+   <span>${escapeHTML(p[1])}</span>
+   <span>${row.qty} × ${money(p[2])}</span>
+   <span>
+    <button class="remove" onclick="changeQty(${row.i},-1)">−</button>
+    <button class="remove" onclick="changeQty(${row.i},1)">+</button>
+   </span>
+  </div>`;
+ }).join("") || `<p class="muted">${t.empty}</p>`;
+ const total=cart.reduce((s,row)=>s+products[row.i][2]*row.qty,0);
+ document.getElementById("total").textContent=money(total);
+}
+function toggleAddress(){
+ document.getElementById("address-field").hidden=
+ document.getElementById("method").value!=="delivery";
+}
+function sendOrder(){
+ const t=ui[lang];
+ if(!cart.length){alert(t.empty);return;}
+ const name=document.getElementById("customer-name").value.trim();
+ const phone=document.getElementById("customer-phone").value.trim();
+ const method=document.getElementById("method").value;
+ const address=document.getElementById("address").value.trim();
+ const note=document.getElementById("customer-note").value.trim();
+ if(!name||!phone){alert(t.fill);return;}
+ if(method==="delivery"&&!address){alert(t.addressMissing);return;}
+ const total=cart.reduce((s,row)=>s+products[row.i][2]*row.qty,0);
+ const lines=cart.map(row=>`${row.qty} x ${products[row.i][1]} — ${money(products[row.i][2]*row.qty)}`).join("\n");
+ const msg=[
+ "Delux Grill Laatzen - Bestellung",
+ `Name: ${name}`,
+ `Telefon: ${phone}`,
+ `Bestellart: ${method==="pickup"?t.pickup:t.delivery}`,
+ method==="delivery"?`Adresse: ${address}`:"",
+ "",
+ lines,
+ `Gesamt: ${money(total)}`,
+ note?`Hinweise: ${note}`:""
+ ].filter(Boolean).join("\n");
+ window.open("https://wa.me/"+WHATSAPP_NUMBER+"?text="+encodeURIComponent(msg),"_blank");
+}
+changeLanguage(lang);
+</script>
+</body>
+</html>
