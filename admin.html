@@ -1,362 +1,203 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>إدارة Delux Grill</title>
-
+  <title>Delux Grill - لوحة الإدارة</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 850px;
-      margin: 25px auto;
-      padding: 16px;
-      background: #f4f4f4;
-      color: #222;
-    }
-    h1 { color: #a32020; }
-    .panel {
-      background: white;
-      padding: 20px;
-      margin-bottom: 18px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px #0001;
-    }
-    input, textarea, button {
-      box-sizing: border-box;
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      font-size: 16px;
-      border-radius: 6px;
-    }
-    input, textarea { border: 1px solid #ccc; }
-    textarea {
-      min-height: 360px;
-      direction: ltr;
-      text-align: left;
-      font-family: monospace;
-    }
-    button {
-      border: 0;
-      color: white;
-      background: #a32020;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button.secondary { background: #333; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    #status {
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      padding: 12px;
-      background: #fff4d6;
-      border-radius: 6px;
-      margin-top: 12px;
-    }
-    .hint { color: #555; line-height: 1.7; }
+    body { font-family: Arial, sans-serif; max-width: 750px; margin: 25px auto; padding: 16px; background: #f4f4f4; }
+    .panel { background: white; padding: 20px; border-radius: 10px; margin-bottom: 16px; }
+    input, textarea, button { box-sizing: border-box; width: 100%; padding: 12px; margin-top: 10px; font-size: 16px; }
+    textarea { min-height: 320px; direction: ltr; text-align: left; }
+    button { cursor: pointer; background: #a32020; color: white; border: 0; border-radius: 6px; }
+    #status { margin-top: 15px; padding: 12px; background: #fff4d6; overflow-wrap: anywhere; }
     [hidden] { display: none !important; }
   </style>
 </head>
-
 <body>
   <h1>Delux Grill – لوحة الإدارة</h1>
-  <p class="hint">
-    سجّل الدخول بحساب الإدارة. يمكنك تعديل بيانات المنيو وحفظ مسودة،
-    ثم نشرها عندما تكون جاهزة.
-  </p>
 
   <div class="panel">
     <h2>تسجيل الدخول</h2>
     <form id="loginForm">
-      <input
-        id="email"
-        type="email"
-        placeholder="البريد الإلكتروني"
-        autocomplete="username"
-        required
-      >
-      <input
-        id="password"
-        type="password"
-        placeholder="كلمة المرور"
-        autocomplete="current-password"
-        required
-      >
+      <input id="email" type="email" placeholder="البريد الإلكتروني" required>
+      <input id="password" type="password" placeholder="كلمة المرور" required>
       <button type="submit">تسجيل الدخول</button>
     </form>
-    <button id="logoutBtn" class="secondary" hidden>تسجيل الخروج</button>
-    <div id="status" role="status">جاري تجهيز لوحة الإدارة...</div>
+    <button id="logoutBtn" hidden>تسجيل الخروج</button>
+    <div id="status">جاري الاتصال...</div>
   </div>
 
   <div class="panel" id="editor" hidden>
     <h2>تعديل المنيو</h2>
-    <p class="hint">
-      عدّل النص بصيغة JSON. حافظ على الأقواس والفواصل وعلامات التنصيص.
-      يمكنك حفظ التعديلات كمسودة قبل نشرها.
-    </p>
-
     <textarea id="menuData" spellcheck="false"></textarea>
-
-    <button id="loadBtn" class="secondary">تحميل آخر مسودة</button>
-    <button id="saveBtn" class="secondary">حفظ المسودة</button>
+    <button id="loadBtn">تحميل المسودة</button>
+    <button id="saveBtn">حفظ المسودة</button>
     <button id="publishBtn">نشر المنيو</button>
   </div>
 
-  <script>
-    // 1) ضع المفتاح العام الكامل من مشروع Supabase هنا
-    const PROJECT_URL = "https://kweesbbghzvxjgwhdnqo.supabase.co";
-    const PUBLISHABLE_KEY = "ضع_المفتاح_العام_هنا";
+<script>
+const PROJECT_URL = "https://kweesbbghzvxjgwhdnqo.supabase.co";
+const PUBLISHABLE_KEY = "sb_publishable_QT_7w8KNYAfF1cpJytBhJw_ZjjxflPu";
+const ADMIN_UID = "b9b71c76-83d7-4ae2-bfbb-3584a951b58a";
 
-    // 2) حساب الإدارة المسموح له بالنشر
-    const ADMIN_UID = "b9b71c76-83d7-4ae2-bfbb-3584a951b58a";
+const statusBox = document.getElementById("status");
+const loginForm = document.getElementById("loginForm");
+const editor = document.getElementById("editor");
+const logoutBtn = document.getElementById("logoutBtn");
+const menuData = document.getElementById("menuData");
 
-    let client = null;
-    let currentUser = null;
+let client = null;
+let currentUser = null;
 
-    const statusBox = document.getElementById("status");
-    const loginForm = document.getElementById("loginForm");
-    const editor = document.getElementById("editor");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const menuData = document.getElementById("menuData");
-    const loadBtn = document.getElementById("loadBtn");
-    const saveBtn = document.getElementById("saveBtn");
-    const publishBtn = document.getElementById("publishBtn");
+function status(message) {
+  statusBox.textContent = message;
+}
 
-    function showStatus(message) {
-      statusBox.textContent = message;
+function parseMenu() {
+  try {
+    return JSON.parse(menuData.value);
+  } catch {
+    throw new Error("صيغة المنيو غير صحيحة. تأكد من JSON.");
+  }
+}
+
+async function loadDraft() {
+  try {
+    const { data, error } = await client
+      .from("menu_drafts")
+      .select("content")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (data?.content) {
+      menuData.value = JSON.stringify(data.content, null, 2);
+      status("تم تحميل المسودة.");
+      return;
     }
 
-    function showUser(user) {
-      currentUser = user;
-      const isAdmin = user && user.id === ADMIN_UID;
+    const response = await fetch("./menu.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("تعذّر تحميل menu.json.");
 
-      if (!isAdmin) {
-        editor.hidden = true;
-        logoutBtn.hidden = false;
-        loginForm.hidden = true;
-        showStatus("هذا الحساب ليس حساب الإدارة المسموح له.");
+    menuData.value = JSON.stringify(await response.json(), null, 2);
+    status("تم تحميل المنيو الأساسي. يمكنك تعديله وحفظه.");
+  } catch (error) {
+    status("خطأ في تحميل المنيو: " + error.message);
+  }
+}
+
+async function saveDraft() {
+  try {
+    const content = parseMenu();
+    const { error } = await client.from("menu_drafts").upsert({
+      id: 1,
+      content,
+      updated_at: new Date().toISOString()
+    });
+    if (error) throw error;
+    status("تم حفظ المسودة بنجاح.");
+  } catch (error) {
+    status("فشل حفظ المسودة: " + error.message);
+  }
+}
+
+async function publishMenu() {
+  try {
+    if (!confirm("هل تريد نشر المنيو؟")) return;
+    const content = parseMenu();
+    const { error } = await client.from("published_menu").upsert({
+      id: 1,
+      content,
+      updated_at: new Date().toISOString()
+    });
+    if (error) throw error;
+    status("تم النشر في قاعدة البيانات. يجب أن تكون صفحة الزبائن مبرمجة لقراءة published_menu.");
+  } catch (error) {
+    status("فشل النشر: " + error.message);
+  }
+}
+
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!client) {
+    status("الاتصال غير جاهز. تحقق من المفتاح العام.");
+    return;
+  }
+
+  status("جاري تسجيل الدخول...");
+  try {
+    const { data, error } = await client.auth.signInWithPassword({
+      email: document.getElementById("email").value.trim(),
+      password: document.getElementById("password").value
+    });
+    if (error) throw error;
+
+    if (!data.user || data.user.id !== ADMIN_UID) {
+      await client.auth.signOut();
+      status("هذا الحساب غير مخوّل للإدارة.");
+      return;
+    }
+
+    currentUser = data.user;
+    loginForm.hidden = true;
+    logoutBtn.hidden = false;
+    editor.hidden = false;
+    await loadDraft();
+  } catch (error) {
+    status("فشل تسجيل الدخول: " + error.message);
+  }
+});
+
+logoutBtn.addEventListener("click", async () => {
+  await client.auth.signOut();
+  currentUser = null;
+  loginForm.hidden = false;
+  logoutBtn.hidden = true;
+  editor.hidden = true;
+  status("تم تسجيل الخروج.");
+});
+
+document.getElementById("loadBtn").addEventListener("click", loadDraft);
+document.getElementById("saveBtn").addEventListener("click", saveDraft);
+document.getElementById("publishBtn").addEventListener("click", publishMenu);
+
+async function initialize() {
+  if (!window.supabase) {
+    status("تعذّر تحميل مكتبة Supabase. تحقق من الإنترنت.");
+    return;
+  }
+
+  try {
+    client = window.supabase.createClient(PROJECT_URL, PUBLISHABLE_KEY);
+    const { data, error } = await client.auth.getSession();
+    if (error) throw error;
+
+    if (data.session?.user) {
+      if (data.session.user.id !== ADMIN_UID) {
+        await client.auth.signOut();
+        status("هذا الحساب غير مخوّل للإدارة.");
         return;
       }
 
+      currentUser = data.session.user;
       loginForm.hidden = true;
       logoutBtn.hidden = false;
       editor.hidden = false;
-      showStatus("تم تسجيل الدخول. جاري تحميل المنيو...");
-      loadDraft();
+      await loadDraft();
+    } else {
+      status("الاتصال جاهز. أدخل بيانات حساب الإدارة.");
     }
+  } catch (error) {
+    client = null;
+    status("خطأ في الاتصال: " + error.message);
+  }
+}
 
-    function readMenu() {
-      let parsed;
-
-      try {
-        parsed = JSON.parse(menuData.value);
-      } catch (error) {
-        throw new Error("صيغة JSON غير صحيحة. راجع الأقواس والفواصل وعلامات التنصيص.");
-      }
-
-      if (
-        !parsed ||
-        typeof parsed !== "object" ||
-        Array.isArray(parsed)
-      ) {
-        throw new Error("المنيو يجب أن يكون كائناً بصيغة JSON.");
-      }
-
-      return parsed;
-    }
-
-    async function loadDraft() {
-      if (!currentUser || currentUser.id !== ADMIN_UID) return;
-
-      loadBtn.disabled = true;
-
-      try {
-        const { data, error } = await client
-          .from("menu_drafts")
-          .select("content")
-          .eq("id", 1)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (data && data.content) {
-          menuData.value = JSON.stringify(data.content, null, 2);
-          showStatus("تم تحميل آخر مسودة محفوظة.");
-          return;
-        }
-
-        const response = await fetch("./menu.json", { cache: "no-store" });
-
-        if (!response.ok) {
-          throw new Error("لم أتمكن من تحميل menu.json من الموقع.");
-        }
-
-        const menu = await response.json();
-        menuData.value = JSON.stringify(menu, null, 2);
-        showStatus("تم تحميل المنيو الأساسي. احفظه كمسودة بعد التعديل.");
-      } catch (error) {
-        showStatus("تعذّر تحميل المنيو: " + error.message);
-      } finally {
-        loadBtn.disabled = false;
-      }
-    }
-
-    async function saveDraft() {
-      if (!currentUser || currentUser.id !== ADMIN_UID) {
-        showStatus("سجّل الدخول بحساب الإدارة أولاً.");
-        return;
-      }
-
-      saveBtn.disabled = true;
-
-      try {
-        const content = readMenu();
-
-        const { error } = await client
-          .from("menu_drafts")
-          .upsert({
-            id: 1,
-            content: content,
-            updated_at: new Date().toISOString()
-          });
-
-        if (error) throw error;
-
-        showStatus("تم حفظ المسودة بنجاح. لم يتم نشرها بعد.");
-      } catch (error) {
-        showStatus("لم يتم حفظ المسودة: " + error.message);
-      } finally {
-        saveBtn.disabled = false;
-      }
-    }
-
-    async function publishMenu() {
-      if (!currentUser || currentUser.id !== ADMIN_UID) {
-        showStatus("سجّل الدخول بحساب الإدارة أولاً.");
-        return;
-      }
-
-      let content;
-
-      try {
-        content = readMenu();
-      } catch (error) {
-        showStatus(error.message);
-        return;
-      }
-
-      if (!confirm("هل تريد نشر هذه النسخة من المنيو؟")) return;
-
-      publishBtn.disabled = true;
-
-      try {
-        const { error } = await client
-          .from("published_menu")
-          .upsert({
-            id: 1,
-            content: content,
-            updated_at: new Date().toISOString()
-          });
-
-        if (error) throw error;
-
-        showStatus(
-          "تم نشر المنيو في قاعدة البيانات بنجاح. " +
-          "ملاحظة: يجب أن تكون صفحة الزبائن مبرمجة لقراءة published_menu حتى تظهر التعديلات عليها."
-        );
-      } catch (error) {
-        showStatus("فشل النشر: " + error.message);
-      } finally {
-        publishBtn.disabled = false;
-      }
-    }
-
-    loginForm.addEventListener("submit", async function (event) {
-      event.preventDefault();
-
-      if (!client) {
-        showStatus("لم يتم تجهيز الاتصال. تأكد من المفتاح العام أعلى الملف.");
-        return;
-      }
-
-      showStatus("جاري تسجيل الدخول...");
-
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
-
-      try {
-        const { data, error } = await client.auth.signInWithPassword({
-          email: email,
-          password: password
-        });
-
-        if (error) throw error;
-
-        if (!data.user || data.user.id !== ADMIN_UID) {
-          await client.auth.signOut();
-          showStatus("هذا ليس حساب الإدارة المسموح له.");
-          return;
-        }
-
-        showUser(data.user);
-      } catch (error) {
-        showStatus("فشل تسجيل الدخول: " + error.message);
-      }
-    });
-
-    logoutBtn.addEventListener("click", async function () {
-      if (client) await client.auth.signOut();
-
-      currentUser = null;
-      editor.hidden = true;
-      loginForm.hidden = false;
-      logoutBtn.hidden = true;
-      menuData.value = "";
-      showStatus("تم تسجيل الخروج.");
-    });
-
-    loadBtn.addEventListener("click", loadDraft);
-    saveBtn.addEventListener("click", saveDraft);
-    publishBtn.addEventListener("click", publishMenu);
-
-    async function initialize() {
-      if (
-        PUBLISHABLE_KEY === "sb_publishable_QT_7w8KNYAfF1cpJytBhJw_ZjjxflPu" ||
-        !PUBLISHABLE_KEY.trim(sb_publishable_QT_7w8KNYAfF1cpJytBhJw_ZjjxflPu)
-      ) {
-        showStatus("sb_publishable_QT_7w8KNYAfF1cpJytBhJw_ZjjxflPu");
-        return;
-      }
-
-      if (!window.supabase) {
-        showStatus("تعذّر تحميل مكتبة Supabase. تحقق من اتصال الإنترنت.");
-        return;
-      }
-
-      try {
-        client = window.supabase.createClient(
-          PROJECT_URL,
-          PUBLISHABLE_KEY
-        );
-
-        const { data, error } = await client.auth.getSession();
-
-        if (error) throw error;
-
-        if (data.session && data.session.user) {
-          showUser(data.session.user);
-        } else {
-          showStatus("أدخل البريد الإلكتروني وكلمة المرور لحساب الإدارة.");
-        }
-      } catch (error) {
-        showStatus("خطأ في الاتصال: " + error.message);
-      }
-    }
-
-    initialize();
-  </script>
+initialize();
+</script>
 </body>
 </html>
