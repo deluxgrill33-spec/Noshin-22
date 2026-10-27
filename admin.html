@@ -3,223 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Delux Grill - إدارة المنيو</title>
+<title>Delux Grill - لوحة الإدارة</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
-:root {
-  --red: #a52222;
-  --bg: #f4f5f7;
-  --border: #ddd;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: #222;
-  font-family: Arial, sans-serif;
-}
-header {
-  background: #202020;
-  color: white;
-  padding: 20px 16px;
-}
-header h1 { margin: 0 0 8px; font-size: 25px; }
-header p { margin: 0; color: #ddd; }
-main { max-width: 900px; margin: auto; padding: 14px; }
-.card {
-  background: white;
-  padding: 16px;
-  margin-bottom: 15px;
-  border-radius: 12px;
-  border: 1px solid #e5e5e5;
-}
-h2 { font-size: 20px; margin-top: 0; }
-label {
-  display: block;
-  font-weight: bold;
-  margin: 12px 0 5px;
-}
-input, textarea, select {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px;
-  background: white;
-}
-textarea { min-height: 75px; resize: vertical; }
-button {
-  border: 0;
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-size: 15px;
-  font-weight: bold;
-  cursor: pointer;
-}
-button:disabled { opacity: .5; cursor: wait; }
-.primary { background: var(--red); color: white; }
-.dark { background: #333; color: white; }
-.light { background: #eee; color: #222; }
-.danger { background: #fee2e2; color: #a00; }
-.actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-}
-.actions button { flex: 1; }
-.categories {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.category {
-  background: white;
-  border: 1px solid var(--border);
-  padding: 13px 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  text-align: center;
-  font-weight: bold;
-}
-.category.active {
-  background: var(--red);
-  color: white;
-  border-color: var(--red);
-}
-.item {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 13px;
-  margin-top: 10px;
-}
-.item-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: start;
-}
-.item-name { font-weight: bold; font-size: 17px; }
-.price { color: var(--red); font-weight: bold; white-space: nowrap; }
-.small { font-size: 13px; color: #666; line-height: 1.6; }
-#status {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  background: #fff4d6;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 12px;
-}
-#editor, #logoutBtn { display: none; }
-.note { line-height: 1.7; color: #555; }
-@media (max-width: 480px) {
-  main { padding: 9px; }
-  .card { padding: 12px; }
-  .actions button { min-width: 100%; }
-}
+body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:16px;color:#222}
+main{max-width:760px;margin:auto}
+h1{font-size:25px}
+.card{background:white;padding:16px;margin:12px 0;border-radius:12px;box-shadow:0 2px 8px #ddd}
+input,textarea,select{box-sizing:border-box;width:100%;padding:12px;margin:6px 0;border:1px solid #bbb;border-radius:7px;font-size:16px}
+button{padding:12px 16px;margin:5px 2px;border:0;border-radius:7px;background:#222;color:white;font-size:15px;cursor:pointer}
+.green{background:#16803c}.red{background:#b42318}.orange{background:#b75b00}
+.item{border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:8px}
+.muted{color:#666;font-size:14px}
+.hidden{display:none}
 </style>
 </head>
-
 <body>
-<header>
-  <h1>🍕 Delux Grill</h1>
-  <p>لوحة إدارة المطعم والمنيو</p>
-</header>
-
 <main>
-  <section class="card" id="loginCard">
-    <h2>🔐 تسجيل الدخول</h2>
-    <form id="loginForm">
-      <label for="email">البريد الإلكتروني</label>
-      <input id="email" type="email" autocomplete="username" required>
+<h1>🍕 Delux Grill – لوحة الإدارة</h1>
 
-      <label for="password">كلمة المرور</label>
-      <input id="password" type="password"
-             autocomplete="current-password" required>
+<div class="card" id="loginBox">
+<h3>تسجيل الدخول</h3>
+<input id="email" type="email" placeholder="البريد الإلكتروني" value="deluxgrill33@gmail.com">
+<input id="password" type="password" placeholder="كلمة المرور">
+<button class="green" onclick="login()">دخول</button>
+<p id="loginMessage"></p>
+</div>
 
-      <div class="actions">
-        <button class="primary" type="submit">تسجيل الدخول</button>
-      </div>
-    </form>
-  </section>
+<div id="app" class="hidden">
+<div class="card">
+<button onclick="logout()">تسجيل الخروج</button>
+<p id="status">أهلًا بك في إدارة المنيو.</p>
+</div>
 
-  <section class="card" id="editor">
-    <h2>📋 اختر القسم</h2>
-    <div class="categories" id="categories"></div>
-    <div class="actions">
-      <button class="primary" id="addBtn">＋ إضافة صنف جديد</button>
-    </div>
-    <p class="note">اختر القسم، ثم أضف الأصناف أو عدّلها أو احذفها.</p>
-  </section>
+<div class="card">
+<h3>بيانات المطعم</h3>
+<label>اسم المطعم</label>
+<input id="restaurant" value="Delux Grill Laatzen">
+<label>العنوان</label>
+<input id="address" value="Hildesheimer Str. 520, Laatzen">
+</div>
 
-  <section class="card" id="formCard" hidden>
-    <h2 id="formTitle">إضافة صنف</h2>
-    <form id="itemForm">
-      <label for="category">القسم</label>
-      <select id="category" required>
-        <option value="pizza">البيتزا</option>
-        <option value="burger">البرغر</option>
-        <option value="snack">السناك والبطاطا</option>
-        <option value="drinks">المشروبات</option>
-      </select>
+<div class="card">
+<h3>إضافة صنف جديد</h3>
+<label>القسم</label>
+<select id="category">
+<option value="pizza">🍕 بيتزا / Pizza</option>
+<option value="burger">🍔 برغر / Burger</option>
+<option value="snack">🍟 سناك / Snacks</option>
+<option value="drinks">🥤 مشروبات / Getränke</option>
+</select>
+<label>اسم الصنف بالعربية</label>
+<input id="nameAr" placeholder="مثال: بيتزا مارغريتا">
+<label>اسم الصنف بالألمانية</label>
+<input id="nameDe" placeholder="مثال: Pizza Margherita">
+<label>السعر باليورو</label>
+<input id="price" type="number" min="0" step="0.10" placeholder="مثال: 7.50">
+<label>الوصف (اختياري)</label>
+<input id="description" placeholder="مكونات الصنف">
+<label>الإضافات، افصل بينها بفاصلة (اختياري)</label>
+<input id="extras" placeholder="جبنة إضافية, زيتون">
+<button class="green" onclick="addItem()">➕ إضافة الصنف</button>
+</div>
 
-      <label for="nameAr">اسم الصنف بالعربي</label>
-      <input id="nameAr" required placeholder="مثلاً: بيتزا مارغريتا">
+<div class="card">
+<h3>أقسام المنيو والأصناف</h3>
+<div id="menuItems"></div>
+</div>
 
-      <label for="nameDe">اسم الصنف بالألماني</label>
-      <input id="nameDe" required placeholder="مثلاً: Pizza Margherita">
-
-      <label for="price">السعر باليورو (€)</label>
-      <input id="price" type="number" min="0" max="9999"
-             step="0.01" required placeholder="مثلاً: 8.50">
-
-      <label for="descriptionAr">الوصف بالعربي</label>
-      <textarea id="descriptionAr" placeholder="مكونات الصنف"></textarea>
-
-      <label for="descriptionDe">الوصف بالألماني</label>
-      <textarea id="descriptionDe" placeholder="Zutaten und Beschreibung"></textarea>
-
-      <label for="extrasAr">الإضافات بالعربي</label>
-      <input id="extrasAr" placeholder="جبنة إضافية، زيتون">
-
-      <label for="extrasDe">الإضافات بالألماني</label>
-      <input id="extrasDe" placeholder="Extra Käse, Oliven">
-
-      <label>
-        <input id="available" type="checkbox" checked
-               style="width:auto">
-        الصنف متوفر للبيع
-      </label>
-
-      <div class="actions">
-        <button class="primary" type="submit">حفظ الصنف</button>
-        <button class="light" type="button" id="cancelBtn">إلغاء</button>
-      </div>
-    </form>
-  </section>
-
-  <section class="card" id="listCard">
-    <h2 id="listTitle">أصناف القسم</h2>
-    <div id="itemsList"></div>
-  </section>
-
-  <section class="card" id="publishCard" hidden>
-    <h2>💾 حفظ ونشر المنيو</h2>
-    <p class="note">
-      احفظ المسودة أولاً. عند النشر، تصبح النسخة الحالية هي النسخة المنشورة.
-    </p>
-    <div class="actions">
-      <button class="dark" id="saveBtn">حفظ المسودة</button>
-      <button class="primary" id="publishBtn">نشر المنيو</button>
-    </div>
-    <div class="actions">
-      <button class="light" id="reloadBtn">تحميل المسودة من جديد</button>
-      <button class="light" id="logoutBtn">تسجيل الخروج</button>
-    </div>
-  </section>
-
-  <div id="status" role="status">جاري تجهيز لوحة الإدارة...</div>
+<div class="card">
+<button onclick="loadDraft()">تحميل المسودة</button>
+<button class="orange" onclick="saveDraft()">حفظ المسودة</button>
+<button class="green" onclick="publishMenu()">نشر المنيو</button>
+<p class="muted">حفظ المسودة لا ينشر التغييرات للزبائن. النشر يحفظ المنيو في قاعدة البيانات.</p>
+</div>
+</div>
 </main>
 
 <script>
@@ -227,404 +85,258 @@ const PROJECT_URL = "https://kweesbbghzvxjgwhdnqo.supabase.co";
 const PUBLISHABLE_KEY = "sb_publishable_QT_7w8KNYAfF1cpJytBhJw_ZjjxflPu";
 const ADMIN_UID = "b9b71c76-83d7-4ae2-bfbb-3584a951b58a";
 
-const SECTION_INFO = {
-  pizza: { ar: "البيتزا", de: "Pizza" },
-  burger: { ar: "البرغر", de: "Burger" },
-  snack: { ar: "السناك والبطاطا", de: "Snacks und Pommes" },
-  drinks: { ar: "المشروبات", de: "Getränke" }
+const db = window.supabase.createClient(PROJECT_URL, PUBLISHABLE_KEY);
+
+const categoryNames = {
+  pizza: {ar:"بيتزا",de:"Pizza"},
+  burger: {ar:"برغر",de:"Burger"},
+  snack: {ar:"سناك",de:"Snacks"},
+  drinks: {ar:"مشروبات",de:"Getränke"}
 };
 
-let client = null;
-let currentUser = null;
 let menu = {
-  restaurant: "Delux Grill Laatzen",
-  address: "Hildesheimer Str. 520, Laatzen",
-  currency: "EUR",
-  categories: [],
-  delivery: { enabled: true, fee: null },
-  languages: ["de", "ar", "tr", "en", "pl"]
+  restaurant:"Delux Grill Laatzen",
+  address:"Hildesheimer Str. 520, Laatzen",
+  currency:"EUR",
+  categories:[],
+  delivery:{enabled:true,fee:null},
+  languages:["de","ar","tr","en","pl"]
 };
-let selectedCategory = "pizza";
-let editingId = null;
 
-const $ = id => document.getElementById(id);
-
-function showStatus(message) {
-  $("status").textContent = message;
+function message(text){
+  document.getElementById("status").textContent = text;
 }
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[char]);
-}
-
-function getCategories() {
-  if (!Array.isArray(menu.categories)) menu.categories = [];
-
-  return Object.keys(SECTION_INFO).map(key => {
-    let existing = menu.categories.find(c =>
-      c && (c.id === key || c.slug === key ||
-            c.nameAr === SECTION_INFO[key].ar ||
-            c.name === SECTION_INFO[key].de)
-    );
-
-    if (!existing) {
-      existing = {
-        id: key,
-        nameAr: SECTION_INFO[key].ar,
-        name: SECTION_INFO[key].de,
-        items: []
+function ensureCategories(){
+  for(const id of Object.keys(categoryNames)){
+    let cat = menu.categories.find(c => c.id === id);
+    if(!cat){
+      cat = {
+        id:id,
+        nameAr:categoryNames[id].ar,
+        nameDe:categoryNames[id].de,
+        items:[]
       };
-      menu.categories.push(existing);
+      menu.categories.push(cat);
+    }
+    if(!Array.isArray(cat.items)) cat.items=[];
+  }
+}
+
+function getCat(id){
+  ensureCategories();
+  return menu.categories.find(c => c.id === id);
+}
+
+async function login(){
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value;
+  document.getElementById("loginMessage").textContent="جارٍ تسجيل الدخول...";
+  const {data,error}=await db.auth.signInWithPassword({email,password});
+  if(error){
+    document.getElementById("loginMessage").textContent="تعذّر الدخول: "+error.message;
+    return;
+  }
+  if(data.user.id !== ADMIN_UID){
+    await db.auth.signOut();
+    document.getElementById("loginMessage").textContent="هذا الحساب ليس حساب الإدارة المصرّح به.";
+    return;
+  }
+  showApp();
+  await loadDraft();
+}
+
+async function showApp(){
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+}
+
+async function logout(){
+  await db.auth.signOut();
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("loginBox").classList.remove("hidden");
+  document.getElementById("password").value="";
+}
+
+function readDetails(){
+  menu.restaurant=document.getElementById("restaurant").value.trim();
+  menu.address=document.getElementById("address").value.trim();
+}
+
+function render(){
+  ensureCategories();
+  const root=document.getElementById("menuItems");
+  root.innerHTML="";
+  for(const id of Object.keys(categoryNames)){
+    const cat=getCat(id);
+    const section=document.createElement("div");
+    section.className="item";
+    const heading=document.createElement("h3");
+    heading.textContent=categoryNames[id].ar+" / "+categoryNames[id].de;
+    section.appendChild(heading);
+
+    if(cat.items.length===0){
+      const empty=document.createElement("p");
+      empty.className="muted";
+      empty.textContent="لا توجد أصناف في هذا القسم بعد.";
+      section.appendChild(empty);
     }
 
-    if (!Array.isArray(existing.items)) existing.items = [];
-    existing.id = key;
-    existing.nameAr = SECTION_INFO[key].ar;
-    existing.name = SECTION_INFO[key].de;
-    return existing;
-  });
-}
+    cat.items.forEach((item,index)=>{
+      const row=document.createElement("div");
+      row.className="item";
+      const title=document.createElement("strong");
+      title.textContent=(item.nameAr||"بدون اسم")+" / "+(item.nameDe||"No name");
+      row.appendChild(title);
 
-function getItems() {
-  const category = getCategories().find(c => c.id === selectedCategory);
-  return category.items;
-}
+      const price=document.createElement("p");
+      price.textContent=Number(item.price||0).toFixed(2)+" €";
+      row.appendChild(price);
 
-function renderCategories() {
-  $("categories").innerHTML = Object.entries(SECTION_INFO).map(([id, info]) =>
-    `<button type="button" class="category ${id === selectedCategory ? "active" : ""}"
-      data-category="${id}">${escapeHtml(info.ar)}</button>`
-  ).join("");
+      const available=document.createElement("p");
+      available.className="muted";
+      available.textContent=item.available===false?"غير متوفر":"متوفر";
+      row.appendChild(available);
 
-  $("categories").querySelectorAll("[data-category]").forEach(button => {
-    button.addEventListener("click", () => {
-      selectedCategory = button.dataset.category;
-      $("category").value = selectedCategory;
-      renderCategories();
-      renderItems();
-      closeForm();
+      const edit=document.createElement("button");
+      edit.textContent="تعديل";
+      edit.onclick=()=>editItem(id,index);
+      row.appendChild(edit);
+
+      const toggle=document.createElement("button");
+      toggle.className="orange";
+      toggle.textContent=item.available===false?"تفعيل":"إيقاف مؤقت";
+      toggle.onclick=()=>{
+        item.available=item.available===false;
+        render();
+      };
+      row.appendChild(toggle);
+
+      const remove=document.createElement("button");
+      remove.className="red";
+      remove.textContent="حذف";
+      remove.onclick=()=>{
+        if(confirm("هل تريد حذف هذا الصنف؟")){
+          cat.items.splice(index,1);
+          render();
+        }
+      };
+      row.appendChild(remove);
+      section.appendChild(row);
     });
-  });
+    root.appendChild(section);
+  }
 }
 
-function renderItems() {
-  const items = getItems();
-  $("listTitle").textContent =
-    "أصناف " + SECTION_INFO[selectedCategory].ar;
-
-  if (!items.length) {
-    $("itemsList").innerHTML =
-      '<p class="note">لا توجد أصناف في هذا القسم. اضغط «إضافة صنف جديد» للبدء.</p>';
+function addItem(){
+  const id=document.getElementById("category").value;
+  const nameAr=document.getElementById("nameAr").value.trim();
+  const nameDe=document.getElementById("nameDe").value.trim();
+  const price=parseFloat(document.getElementById("price").value);
+  if(!nameAr || !nameDe || !Number.isFinite(price) || price<0){
+    alert("اكتب اسم الصنف بالعربية والألمانية وسعرًا صحيحًا.");
     return;
   }
-
-  $("itemsList").innerHTML = items.map((item, index) => {
-    const nameAr = item.nameAr || item.name || "بدون اسم";
-    const nameDe = item.nameDe || "";
-    const price = Number(item.price ?? 0).toFixed(2);
-    const extras = Array.isArray(item.extrasAr)
-      ? item.extrasAr.join("، ")
-      : (item.extrasAr || "");
-
-    return `
-      <div class="item">
-        <div class="item-top">
-          <div>
-            <div class="item-name">${escapeHtml(nameAr)}</div>
-            <div>${escapeHtml(nameDe)}</div>
-            <div class="small">
-              ${item.available === false ? "غير متوفر" : "متوفر"}
-              ${extras ? " • إضافات: " + escapeHtml(extras) : ""}
-            </div>
-          </div>
-          <div class="price">${price} €</div>
-        </div>
-        <div class="actions">
-          <button type="button" class="dark" data-edit="${index}">✏️ تعديل</button>
-          <button type="button" class="danger" data-delete="${index}">🗑️ حذف</button>
-        </div>
-      </div>`;
-  }).join("");
-
-  $("itemsList").querySelectorAll("[data-edit]").forEach(button => {
-    button.addEventListener("click", () =>
-      openForm(Number(button.dataset.edit))
-    );
-  });
-
-  $("itemsList").querySelectorAll("[data-delete]").forEach(button => {
-    button.addEventListener("click", () =>
-      deleteItem(Number(button.dataset.delete))
-    );
-  });
-}
-
-function openForm(index = null) {
-  editingId = index;
-  $("formCard").hidden = false;
-  $("category").value = selectedCategory;
-
-  const item = index === null ? null : getItems()[index];
-
-  $("formTitle").textContent = item ? "تعديل الصنف" : "إضافة صنف جديد";
-  $("nameAr").value = item?.nameAr || item?.name || "";
-  $("nameDe").value = item?.nameDe || "";
-  $("price").value = item?.price ?? "";
-  $("descriptionAr").value = item?.descriptionAr || "";
-  $("descriptionDe").value = item?.descriptionDe || "";
-  $("extrasAr").value = Array.isArray(item?.extrasAr)
-    ? item.extrasAr.join(", ") : (item?.extrasAr || "");
-  $("extrasDe").value = Array.isArray(item?.extrasDe)
-    ? item.extrasDe.join(", ") : (item?.extrasDe || "");
-  $("available").checked = item?.available !== false;
-
-  $("formCard").scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function closeForm() {
-  $("formCard").hidden = true;
-  $("itemForm").reset();
-  editingId = null;
-}
-
-$("addBtn").addEventListener("click", () => openForm());
-$("cancelBtn").addEventListener("click", closeForm);
-
-$("category").addEventListener("change", () => {
-  selectedCategory = $("category").value;
-});
-
-$("itemForm").addEventListener("submit", event => {
-  event.preventDefault();
-
-  const price = Number($("price").value);
-  if (!Number.isFinite(price) || price < 0) {
-    showStatus("أدخل سعراً صحيحاً.");
-    return;
-  }
-
-  selectedCategory = $("category").value;
-  const items = getItems();
-
-  const item = {
-    id: editingId === null
-      ? (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()))
-      : items[editingId].id || String(Date.now()),
-    nameAr: $("nameAr").value.trim(),
-    nameDe: $("nameDe").value.trim(),
+  const extrasText=document.getElementById("extras").value.trim();
+  getCat(id).items.push({
+    id:crypto.randomUUID(),
+    nameAr,
+    nameDe,
     price,
-    descriptionAr: $("descriptionAr").value.trim(),
-    descriptionDe: $("descriptionDe").value.trim(),
-    extrasAr: $("extrasAr").value.split(",").map(x => x.trim()).filter(Boolean),
-    extrasDe: $("extrasDe").value.split(",").map(x => x.trim()).filter(Boolean),
-    available: $("available").checked
-  };
-
-  if (!item.nameAr || !item.nameDe) {
-    showStatus("أدخل اسم الصنف بالعربي والألماني.");
-    return;
-  }
-
-  if (editingId === null) {
-    items.push(item);
-  } else {
-    items[editingId] = item;
-  }
-
-  closeForm();
-  renderCategories();
-  renderItems();
-  showStatus("تم تحديث الصنف في الصفحة. اضغط «حفظ المسودة» لحفظه في قاعدة البيانات.");
-});
-
-function deleteItem(index) {
-  const item = getItems()[index];
-  if (!item) return;
-
-  if (!confirm("هل تريد حذف «" + (item.nameAr || item.name) + "»؟")) return;
-
-  getItems().splice(index, 1);
-  renderItems();
-  showStatus("تم حذف الصنف من القائمة الحالية. اضغط «حفظ المسودة» لحفظ التغيير.");
-}
-
-function normalizeMenu(data) {
-  if (!data || typeof data !== "object" || Array.isArray(data)) {
-    throw new Error("بيانات المنيو غير صحيحة.");
-  }
-  menu = data;
-  getCategories();
-  renderCategories();
-  renderItems();
-}
-
-async function loadMenu() {
-  if (!currentUser || currentUser.id !== ADMIN_UID) return;
-
-  try {
-    const { data, error } = await client
-      .from("menu_drafts")
-      .select("content")
-      .eq("id", 1)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (data?.content) {
-      normalizeMenu(data.content);
-      showStatus("تم تحميل المسودة المحفوظة.");
-      return;
-    }
-
-    const response = await fetch("./menu.json", { cache: "no-store" });
-    if (!response.ok) throw new Error("تعذّر تحميل menu.json.");
-
-    normalizeMenu(await response.json());
-    showStatus("تم تحميل المنيو الأساسي. أضف الأصناف ثم احفظ المسودة.");
-  } catch (error) {
-    showStatus("خطأ في تحميل المنيو: " + error.message);
-  }
-}
-
-async function saveToTable(table) {
-  if (!currentUser || currentUser.id !== ADMIN_UID) {
-    throw new Error("سجّل الدخول بحساب الإدارة.");
-  }
-
-  const { error } = await client.from(table).upsert({
-    id: 1,
-    content: menu,
-    updated_at: new Date().toISOString()
+    description:document.getElementById("description").value.trim(),
+    extras:extrasText ? extrasText.split(",").map(x=>x.trim()).filter(Boolean):[],
+    available:true
   });
-
-  if (error) throw error;
+  ["nameAr","nameDe","price","description","extras"].forEach(x=>document.getElementById(x).value="");
+  render();
+  message("تمت إضافة الصنف. اضغط حفظ المسودة أو نشر المنيو لحفظه في قاعدة البيانات.");
 }
 
-$("saveBtn").addEventListener("click", async () => {
-  $("saveBtn").disabled = true;
-  try {
-    await saveToTable("menu_drafts");
-    showStatus("تم حفظ المسودة بنجاح. لم يتم نشرها للزبائن.");
-  } catch (error) {
-    showStatus("فشل حفظ المسودة: " + error.message);
-  } finally {
-    $("saveBtn").disabled = false;
-  }
-});
-
-$("publishBtn").addEventListener("click", async () => {
-  if (!confirm("هل تريد نشر المنيو الحالي؟")) return;
-
-  $("publishBtn").disabled = true;
-  try {
-    await saveToTable("menu_drafts");
-    await saveToTable("published_menu");
-    showStatus("تم حفظ المسودة ونشر المنيو في قاعدة البيانات. يجب أن تقرأ صفحة الزبائن جدول published_menu لعرض التغييرات.");
-  } catch (error) {
-    showStatus("فشلت العملية: " + error.message);
-  } finally {
-    $("publishBtn").disabled = false;
-  }
-});
-
-$("reloadBtn").addEventListener("click", async () => {
-  if (confirm("سيتم استبدال التعديلات الحالية بآخر مسودة محفوظة. هل تريد المتابعة؟")) {
-    await loadMenu();
-  }
-});
-
-$("loginForm").addEventListener("submit", async event => {
-  event.preventDefault();
-
-  if (!client) {
-    showStatus("الاتصال غير جاهز. تحقق من المفتاح العام.");
+function editItem(id,index){
+  const item=getCat(id).items[index];
+  const ar=prompt("اسم الصنف بالعربية:",item.nameAr||"");
+  if(ar===null)return;
+  const de=prompt("اسم الصنف بالألمانية:",item.nameDe||"");
+  if(de===null)return;
+  const priceText=prompt("السعر باليورو:",String(item.price||0));
+  if(priceText===null)return;
+  const price=Number(priceText);
+  if(!ar.trim()||!de.trim()||!Number.isFinite(price)||price<0){
+    alert("الاسم والسعر غير صحيحين.");
     return;
   }
+  item.nameAr=ar.trim();
+  item.nameDe=de.trim();
+  item.price=price;
+  const desc=prompt("الوصف:",item.description||"");
+  if(desc!==null)item.description=desc;
+  const extras=prompt("الإضافات مفصولة بفاصلة:",(item.extras||[]).join(", "));
+  if(extras!==null)item.extras=extras.split(",").map(x=>x.trim()).filter(Boolean);
+  render();
+}
 
-  showStatus("جاري تسجيل الدخول...");
+async function saveToTable(table,successText){
+  readDetails();
+  ensureCategories();
+  message("جارٍ الحفظ...");
+  const {data:{user}}=await db.auth.getUser();
+  if(!user || user.id!==ADMIN_UID){
+    message("انتهت الجلسة. سجّل الدخول مرة أخرى.");
+    return;
+  }
+  const {error}=await db.from(table).upsert({
+    id:1,
+    content:menu,
+    updated_at:new Date().toISOString()
+  });
+  if(error){
+    message("فشل الحفظ: "+error.message);
+    return;
+  }
+  message(successText);
+}
 
-  try {
-    const { data, error } = await client.auth.signInWithPassword({
-      email: $("email").value.trim(),
-      password: $("password").value
-    });
+async function saveDraft(){
+  await saveToTable("menu_drafts","تم حفظ المسودة بنجاح.");
+}
 
-    if (error) throw error;
+async function publishMenu(){
+  if(!confirm("هل تريد نشر المنيو الحالي؟"))return;
+  await saveToTable("published_menu","تم نشر المنيو في قاعدة البيانات. يجب أن تكون صفحة الزبائن مبرمجة لقراءة published_menu.");
+}
 
-    if (!data.user || data.user.id !== ADMIN_UID) {
-      await client.auth.signOut();
-      showStatus("هذا الحساب ليس حساب الإدارة المسموح له.");
+async function loadDraft(){
+  message("جارٍ تحميل المسودة...");
+  const {data,error}=await db.from("menu_drafts").select("content").eq("id",1).maybeSingle();
+  if(error){
+    message("تعذّر تحميل المسودة: "+error.message);
+    return;
+  }
+  if(data && data.content){
+    menu=data.content;
+  }else{
+    const {data:published,error:pubError}=await db.from("published_menu").select("content").eq("id",1).maybeSingle();
+    if(pubError){
+      message("تعذّر تحميل المنيو المنشور: "+pubError.message);
       return;
     }
-
-    currentUser = data.user;
-    $("loginCard").hidden = true;
-    $("editor").style.display = "block";
-    $("listCard").hidden = false;
-    $("publishCard").hidden = false;
-    $("logoutBtn").style.display = "block";
-
-    await loadMenu();
-  } catch (error) {
-    showStatus("فشل تسجيل الدخول: " + error.message);
+    if(published && published.content) menu=published.content;
   }
-});
-
-$("logoutBtn").addEventListener("click", async () => {
-  if (client) await client.auth.signOut();
-  currentUser = null;
-  $("loginCard").hidden = false;
-  $("editor").style.display = "none";
-  $("listCard").hidden = true;
-  $("publishCard").hidden = true;
-  $("logoutBtn").style.display = "none";
-  closeForm();
-  showStatus("تم تسجيل الخروج.");
-});
-
-async function initialize() {
-  $("listCard").hidden = true;
-
-  if (!window.supabase) {
-    showStatus("تعذّر تحميل مكتبة Supabase. تحقق من اتصال الإنترنت.");
-    return;
-  }
-
-  try {
-    client = window.supabase.createClient(PROJECT_URL, PUBLISHABLE_KEY);
-    const { data, error } = await client.auth.getSession();
-    if (error) throw error;
-
-    if (data.session?.user) {
-      if (data.session.user.id !== ADMIN_UID) {
-        await client.auth.signOut();
-        showStatus("هذا الحساب غير مخوّل للإدارة.");
-        return;
-      }
-
-      currentUser = data.session.user;
-      $("loginCard").hidden = true;
-      $("editor").style.display = "block";
-      $("listCard").hidden = false;
-      $("publishCard").hidden = false;
-      $("logoutBtn").style.display = "block";
-      await loadMenu();
-    } else {
-      showStatus("الاتصال جاهز. سجّل الدخول للبدء.");
-    }
-  } catch (error) {
-    client = null;
-    showStatus("خطأ في الاتصال: " + error.message);
-  }
+  menu.restaurant=menu.restaurant||"Delux Grill Laatzen";
+  menu.address=menu.address||"Hildesheimer Str. 520, Laatzen";
+  document.getElementById("restaurant").value=menu.restaurant;
+  document.getElementById("address").value=menu.address;
+  ensureCategories();
+  render();
+  message("تم تحميل المنيو. يمكنك إضافة الأصناف وتعديلها.");
 }
 
-initialize();
+db.auth.getSession().then(async ({data})=>{
+  if(data.session && data.session.user.id===ADMIN_UID){
+    await showApp();
+    await loadDraft();
+  }
+});
 </script>
 </body>
 </html>
