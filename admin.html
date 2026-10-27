@@ -3,296 +3,357 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Delux Grill – لوحة الإدارة</title>
+  <title>إدارة Delux Grill</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 760px;
+      max-width: 850px;
       margin: 25px auto;
       padding: 16px;
-      background: #f5f5f5;
+      background: #f4f4f4;
       color: #222;
     }
+    h1 { color: #a32020; }
     .panel {
       background: white;
       padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px #0001;
     }
     input, textarea, button {
       box-sizing: border-box;
       width: 100%;
       padding: 12px;
-      margin: 7px 0;
+      margin-top: 10px;
       font-size: 16px;
-      border-radius: 7px;
+      border-radius: 6px;
     }
-    input, textarea { border: 1px solid #bbb; }
+    input, textarea { border: 1px solid #ccc; }
     textarea {
-      min-height: 300px;
+      min-height: 360px;
       direction: ltr;
       text-align: left;
       font-family: monospace;
     }
     button {
       border: 0;
-      background: #222;
       color: white;
+      background: #a32020;
       cursor: pointer;
+      font-weight: bold;
     }
-    button:disabled { opacity: .5; }
-    .secondary { background: #555; }
-    #status { white-space: pre-wrap; overflow-wrap: anywhere; }
-    .hint { color: #555; line-height: 1.5; }
+    button.secondary { background: #333; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    #status {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      padding: 12px;
+      background: #fff4d6;
+      border-radius: 6px;
+      margin-top: 12px;
+    }
+    .hint { color: #555; line-height: 1.7; }
+    [hidden] { display: none !important; }
   </style>
 </head>
+
 <body>
+  <h1>Delux Grill – لوحة الإدارة</h1>
+  <p class="hint">
+    سجّل الدخول بحساب الإدارة. يمكنك تعديل بيانات المنيو وحفظ مسودة،
+    ثم نشرها عندما تكون جاهزة.
+  </p>
+
   <div class="panel">
-    <h1>Delux Grill</h1>
-    <h2>لوحة الإدارة</h2>
-    <p class="hint">سجّل الدخول بحساب الإدارة الذي أنشأته في Supabase.</p>
-
+    <h2>تسجيل الدخول</h2>
     <form id="loginForm">
-      <label for="email">البريد الإلكتروني</label>
-      <input id="email" type="email" autocomplete="username"
-             required>
-
-      <label for="password">كلمة المرور</label>
-      <input id="password" type="password"
-             autocomplete="current-password" required>
-
+      <input
+        id="email"
+        type="email"
+        placeholder="البريد الإلكتروني"
+        autocomplete="username"
+        required
+      >
+      <input
+        id="password"
+        type="password"
+        placeholder="كلمة المرور"
+        autocomplete="current-password"
+        required
+      >
       <button type="submit">تسجيل الدخول</button>
     </form>
-
-    <button id="logoutBtn" class="secondary" hidden>
-      تسجيل الخروج
-    </button>
-    <p id="status" role="status">بانتظار تسجيل الدخول.</p>
+    <button id="logoutBtn" class="secondary" hidden>تسجيل الخروج</button>
+    <div id="status" role="status">جاري تجهيز لوحة الإدارة...</div>
   </div>
 
   <div class="panel" id="editor" hidden>
-    <h2>بيانات المنيو</h2>
+    <h2>تعديل المنيو</h2>
     <p class="hint">
-      هذه مسودة بصيغة JSON. احتفظ بنسخة من بياناتك قبل تعديلها.
+      عدّل النص بصيغة JSON. حافظ على الأقواس والفواصل وعلامات التنصيص.
+      يمكنك حفظ التعديلات كمسودة قبل نشرها.
     </p>
 
-    <textarea id="menuData" spellcheck="false">{
-  "restaurant": "Delux Grill Laatzen",
-  "address": "Hildesheimer Str. 520, Laatzen",
-  "currency": "EUR",
-  "categories": [],
-  "delivery": {
-    "enabled": true,
-    "fee": null
-  },
-  "languages": ["de", "ar", "tr", "en", "pl"]
-}</textarea>
+    <textarea id="menuData" spellcheck="false"></textarea>
 
-    <button id="loadBtn" class="secondary">
-      تحميل المسودة المحفوظة
-    </button>
-    <button id="saveBtn">حفظ المسودة</button>
+    <button id="loadBtn" class="secondary">تحميل آخر مسودة</button>
+    <button id="saveBtn" class="secondary">حفظ المسودة</button>
     <button id="publishBtn">نشر المنيو</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const PROJECT_URL =
-      "https://kweesbbghzvxjgwhdnqo.supabase.co";
+    // 1) ضع المفتاح العام الكامل من مشروع Supabase هنا
+    const PROJECT_URL = "https://kweesbbghzvxjgwhdnqo.supabase.co";
+    const PUBLISHABLE_KEY = "ضع_المفتاح_العام_هنا";
 
-    // ضع هنا قيمة Publishable key التي نسختها من Supabase.
-    // لا تستخدم Secret أو service_role.
-    const PUBLISHABLE_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE";
-
+    // 2) حساب الإدارة المسموح له بالنشر
     const ADMIN_UID = "b9b71c76-83d7-4ae2-bfbb-3584a951b58a";
-
-    const statusBox = document.getElementById("status");
-    const editor = document.getElementById("editor");
-    const loginForm = document.getElementById("loginForm");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const menuData = document.getElementById("menuData");
 
     let client = null;
     let currentUser = null;
 
-    function status(message) {
+    const statusBox = document.getElementById("status");
+    const loginForm = document.getElementById("loginForm");
+    const editor = document.getElementById("editor");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const menuData = document.getElementById("menuData");
+    const loadBtn = document.getElementById("loadBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const publishBtn = document.getElementById("publishBtn");
+
+    function showStatus(message) {
       statusBox.textContent = message;
     }
 
-    function setLoggedIn(user) {
+    function showUser(user) {
       currentUser = user;
       const isAdmin = user && user.id === ADMIN_UID;
 
-      editor.hidden = !isAdmin;
-      logoutBtn.hidden = !user;
-      loginForm.hidden = !!user;
-
-      if (user && !isAdmin) {
-        status("هذا الحساب ليس حساب الإدارة المصرّح له.");
-      } else if (isAdmin) {
-        status("تم تسجيل الدخول. يمكنك إدارة المسودة.");
+      if (!isAdmin) {
+        editor.hidden = true;
+        logoutBtn.hidden = false;
+        loginForm.hidden = true;
+        showStatus("هذا الحساب ليس حساب الإدارة المسموح له.");
+        return;
       }
+
+      loginForm.hidden = true;
+      logoutBtn.hidden = false;
+      editor.hidden = false;
+      showStatus("تم تسجيل الدخول. جاري تحميل المنيو...");
+      loadDraft();
     }
 
-    function requireAdmin() {
-      if (!currentUser || currentUser.id !== ADMIN_UID) {
-        throw new Error("يجب تسجيل الدخول بحساب الإدارة.");
-      }
-    }
+    function readMenu() {
+      let parsed;
 
-    function parseMenu() {
-      const parsed = JSON.parse(menuData.value);
-      if (!parsed || typeof parsed !== "object" ||
-          Array.isArray(parsed)) {
-        throw new Error("بيانات المنيو يجب أن تكون JSON صالحاً.");
+      try {
+        parsed = JSON.parse(menuData.value);
+      } catch (error) {
+        throw new Error("صيغة JSON غير صحيحة. راجع الأقواس والفواصل وعلامات التنصيص.");
       }
+
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed)
+      ) {
+        throw new Error("المنيو يجب أن يكون كائناً بصيغة JSON.");
+      }
+
       return parsed;
     }
 
     async function loadDraft() {
-      requireAdmin();
-      status("جارٍ تحميل المسودة...");
+      if (!currentUser || currentUser.id !== ADMIN_UID) return;
 
-      const { data, error } = await client
-        .from("menu_drafts")
-        .select("content")
-        .eq("id", 1)
-        .maybeSingle();
+      loadBtn.disabled = true;
 
-      if (error) throw error;
+      try {
+        const { data, error } = await client
+          .from("menu_drafts")
+          .select("content")
+          .eq("id", 1)
+          .maybeSingle();
 
-      if (!data) {
-        status("لا توجد مسودة محفوظة بعد. يمكنك حفظ البيانات الظاهرة.");
-        return;
+        if (error) throw error;
+
+        if (data && data.content) {
+          menuData.value = JSON.stringify(data.content, null, 2);
+          showStatus("تم تحميل آخر مسودة محفوظة.");
+          return;
+        }
+
+        const response = await fetch("./menu.json", { cache: "no-store" });
+
+        if (!response.ok) {
+          throw new Error("لم أتمكن من تحميل menu.json من الموقع.");
+        }
+
+        const menu = await response.json();
+        menuData.value = JSON.stringify(menu, null, 2);
+        showStatus("تم تحميل المنيو الأساسي. احفظه كمسودة بعد التعديل.");
+      } catch (error) {
+        showStatus("تعذّر تحميل المنيو: " + error.message);
+      } finally {
+        loadBtn.disabled = false;
       }
-
-      menuData.value = JSON.stringify(data.content, null, 2);
-      status("تم تحميل المسودة.");
     }
 
     async function saveDraft() {
-      requireAdmin();
-      const content = parseMenu();
+      if (!currentUser || currentUser.id !== ADMIN_UID) {
+        showStatus("سجّل الدخول بحساب الإدارة أولاً.");
+        return;
+      }
 
-      const { error } = await client
-        .from("menu_drafts")
-        .upsert(
-          { id: 1, content, updated_at: new Date().toISOString() },
-          { onConflict: "id" }
-        );
+      saveBtn.disabled = true;
 
-      if (error) throw error;
-      status("تم حفظ المسودة بنجاح.");
+      try {
+        const content = readMenu();
+
+        const { error } = await client
+          .from("menu_drafts")
+          .upsert({
+            id: 1,
+            content: content,
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) throw error;
+
+        showStatus("تم حفظ المسودة بنجاح. لم يتم نشرها بعد.");
+      } catch (error) {
+        showStatus("لم يتم حفظ المسودة: " + error.message);
+      } finally {
+        saveBtn.disabled = false;
+      }
     }
 
     async function publishMenu() {
-      requireAdmin();
+      if (!currentUser || currentUser.id !== ADMIN_UID) {
+        showStatus("سجّل الدخول بحساب الإدارة أولاً.");
+        return;
+      }
 
-      if (!confirm("هل تريد نشر المسودة الحالية؟")) return;
-
-      const content = parseMenu();
-
-      // احفظ المسودة أولاً، ثم انشر محتواها.
-      await saveDraft();
-
-      const { error } = await client
-        .from("published_menu")
-        .upsert(
-          { id: 1, content, updated_at: new Date().toISOString() },
-          { onConflict: "id" }
-        );
-
-      if (error) throw error;
-
-      status(
-        "تم حفظ المنيو في جدول النشر. " +
-        "يجب ربط صفحة الزبائن بهذا الجدول كي يظهر المنيو المنشور لديهم."
-      );
-    }
-
-    function handleError(error) {
-      console.error(error);
-      status("تعذّر إتمام العملية: " + (error.message || "خطأ غير معروف"));
-    }
-
-    document.getElementById("saveBtn").addEventListener("click", async () => {
-      try { await saveDraft(); } catch (e) { handleError(e); }
-    });
-
-    document.getElementById("loadBtn").addEventListener("click", async () => {
-      try { await loadDraft(); } catch (e) { handleError(e); }
-    });
-
-    document.getElementById("publishBtn").addEventListener("click", async () => {
-      try { await publishMenu(); } catch (e) { handleError(e); }
-    });
-
-    loginForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
+      let content;
 
       try {
-        if (!client) {
-          if (PUBLISHABLE_KEY === "PASTE_YOUR_PUBLISHABLE_KEY_HERE") {
-            throw new Error("أضف Publishable key في مكانه داخل الكود أولاً.");
-          }
-          client = window.supabase.createClient(
-            PROJECT_URL,
-            PUBLISHABLE_KEY
-          );
-        }
+        content = readMenu();
+      } catch (error) {
+        showStatus(error.message);
+        return;
+      }
 
-        status("جارٍ تسجيل الدخول...");
+      if (!confirm("هل تريد نشر هذه النسخة من المنيو؟")) return;
 
+      publishBtn.disabled = true;
+
+      try {
+        const { error } = await client
+          .from("published_menu")
+          .upsert({
+            id: 1,
+            content: content,
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) throw error;
+
+        showStatus(
+          "تم نشر المنيو في قاعدة البيانات بنجاح. " +
+          "ملاحظة: يجب أن تكون صفحة الزبائن مبرمجة لقراءة published_menu حتى تظهر التعديلات عليها."
+        );
+      } catch (error) {
+        showStatus("فشل النشر: " + error.message);
+      } finally {
+        publishBtn.disabled = false;
+      }
+    }
+
+    loginForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      if (!client) {
+        showStatus("لم يتم تجهيز الاتصال. تأكد من المفتاح العام أعلى الملف.");
+        return;
+      }
+
+      showStatus("جاري تسجيل الدخول...");
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
         const { data, error } = await client.auth.signInWithPassword({
-          email: document.getElementById("email").value.trim(),
-          password: document.getElementById("password").value
+          email: email,
+          password: password
         });
 
         if (error) throw error;
 
-        if (data.user.id !== ADMIN_UID) {
+        if (!data.user || data.user.id !== ADMIN_UID) {
           await client.auth.signOut();
-          setLoggedIn(null);
-          throw new Error("هذا ليس حساب الإدارة المصرّح له.");
+          showStatus("هذا ليس حساب الإدارة المسموح له.");
+          return;
         }
 
-        setLoggedIn(data.user);
-      } catch (e) {
-        handleError(e);
+        showUser(data.user);
+      } catch (error) {
+        showStatus("فشل تسجيل الدخول: " + error.message);
       }
     });
 
-    logoutBtn.addEventListener("click", async () => {
-      try {
-        if (client) {
-          const { error } = await client.auth.signOut();
-          if (error) throw error;
-        }
-        setLoggedIn(null);
-        status("تم تسجيل الخروج.");
-      } catch (e) {
-        handleError(e);
-      }
+    logoutBtn.addEventListener("click", async function () {
+      if (client) await client.auth.signOut();
+
+      currentUser = null;
+      editor.hidden = true;
+      loginForm.hidden = false;
+      logoutBtn.hidden = true;
+      menuData.value = "";
+      showStatus("تم تسجيل الخروج.");
     });
+
+    loadBtn.addEventListener("click", loadDraft);
+    saveBtn.addEventListener("click", saveDraft);
+    publishBtn.addEventListener("click", publishMenu);
 
     async function initialize() {
-      if (PUBLISHABLE_KEY === "sb_publishable_QT_7w8KNYAfF1cpJytBhJw_ZjjxflPu") {
-        status("أضف Publishable key قبل تسجيل الدخول.");
+      if (
+        PUBLISHABLE_KEY === "ضع_المفتاح_العام_هنا" ||
+        !PUBLISHABLE_KEY.trim()
+      ) {
+        showStatus("ضع المفتاح العام الكامل في أعلى الملف أولاً.");
         return;
       }
 
-      client = window.supabase.createClient(
-        PROJECT_URL,
-        PUBLISHABLE_KEY
-      );
-
-      const { data, error } = await client.auth.getSession();
-      if (error) {
-        handleError(error);
+      if (!window.supabase) {
+        showStatus("تعذّر تحميل مكتبة Supabase. تحقق من اتصال الإنترنت.");
         return;
       }
 
-      if (data.session) setLoggedIn(data.session.user);
+      try {
+        client = window.supabase.createClient(
+          PROJECT_URL,
+          PUBLISHABLE_KEY
+        );
+
+        const { data, error } = await client.auth.getSession();
+
+        if (error) throw error;
+
+        if (data.session && data.session.user) {
+          showUser(data.session.user);
+        } else {
+          showStatus("أدخل البريد الإلكتروني وكلمة المرور لحساب الإدارة.");
+        }
+      } catch (error) {
+        showStatus("خطأ في الاتصال: " + error.message);
+      }
     }
 
     initialize();
