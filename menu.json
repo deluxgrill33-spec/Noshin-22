@@ -1,0 +1,18 @@
+
+{
+  "restaurant": "Delux Grill Laatzen",
+  "address": "Hildesheimer Str. 520, Laatzen",
+  "currency": "EUR",
+  "categories": [],
+  "delivery": {
+    "enabled": true,
+    "fee": null
+  },
+  "languages": [
+    "de",
+    "ar",
+    "tr",
+    "en",
+    "pl"
+  ]
+}
