@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#d9d6d0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="راديوهاتي">
+<link rel="manifest" href="manifest.json">
+<title>راديوهاتي</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231c1c1e'/%3E%3Crect x='8' y='8' width='48' height='18' rx='3' fill='%23f08a4b'/%3E%3Crect x='40' y='12' width='5' height='10' fill='%23d62f2f'/%3E%3Ccircle cx='32' cy='44' r='13' fill='%23333' stroke='%23555' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="alternate icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231c1c1e'/%3E%3Crect x='8' y='8' width='48' height='18' rx='3' fill='%23f08a4b'/%3E%3Crect x='40' y='12' width='5' height='10' fill='%23d62f2f'/%3E%3Ccircle cx='32' cy='44' r='13' fill='%23333' stroke='%23555' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=IBM+Plex+Sans+Arabic:wght@500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
+<style>
+/* Layout: one pocket radio filling the screen — black body, orange dial window on top,
+   preset keys, big speaker grille, a ribbed tuning wheel on the side and transport keys at the bottom. */
+:root{
+  --room:#d9d6d0; --body:#1c1c1e; --body2:#2a2a2d; --edge:#3a3a3e; --glass:#0f0f10;
+  --dial:#f08a4b; --dial2:#e5743a; --dialink:#2b1408; --red:#d62f2f; --white:#ecebe7; --muted:#8e8e93;
+  --cond:"Oswald","Arial Narrow",sans-serif; --ar:"IBM Plex Sans Arabic",Tahoma,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;width:100%;overflow:hidden}
+html{background:#dedbd5}
+body{background:linear-gradient(160deg,#e7e4de,var(--room));font:15px/1.4 var(--ar);color:var(--white);overflow:hidden;
+  padding:max(10px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.stage{height:100%;display:flex;justify-content:center;align-items:stretch}
+.radio{position:relative;flex:0 1 440px;min-width:0;height:100%;max-height:900px;margin-left:18px;
+  background:linear-gradient(90deg,var(--body2),var(--body) 12%,var(--body) 88%,#111);border-radius:30px;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.12),inset 0 -4px 0 #000,0 22px 40px rgba(0,0,0,.35),0 0 0 2px #111;
+  display:grid;grid-template-rows:auto auto 1fr auto auto;gap:9px;padding:20px 40px 12px 40px}
+/* antenna on the left side */
+.ant{position:absolute;left:-14px;top:22%;width:7px;height:46%;border-radius:4px;transform:rotate(-14deg);transform-origin:bottom center;
+  background:linear-gradient(90deg,#8d8d8d,#f2f2f2,#9a9a9a);box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.ant::after{content:"";position:absolute;top:-8px;left:-3px;width:13px;height:13px;border-radius:50%;background:linear-gradient(#fafafa,#999)}
+.ant i{position:absolute;left:0;right:0;height:2px;background:#777}
+/* tuning wheel on the left edge (outer side) */
+.wheel{position:absolute;left:8px;top:16px;width:26px;height:min(42%,300px);border-radius:8px;cursor:ns-resize;touch-action:none;overflow:hidden;
+  background:#111;box-shadow:inset 0 0 0 2px #000,inset 0 6px 10px rgba(255,255,255,.08),inset 0 -6px 10px rgba(0,0,0,.6)}
+.wheel .rib{position:absolute;inset:0;background:repeating-linear-gradient(180deg,#3d3d40 0 3px,#151516 3px 7px)}
+.wheel-l{position:absolute;left:4px;top:calc(min(42%,300px) + 22px);writing-mode:vertical-rl;transform:rotate(180deg);font:600 .62rem var(--cond);letter-spacing:.25em;color:var(--muted)}
+/* dial window */
+.win{background:var(--glass);border-radius:16px;padding:8px 8px 6px;box-shadow:inset 0 0 0 2px #000,inset 0 3px 8px rgba(255,255,255,.06)}
+.dial{position:relative;background:linear-gradient(var(--dial),var(--dial2));border-radius:8px;padding:6px 10px 8px;direction:ltr;touch-action:none;cursor:pointer;overflow:hidden}
+.dial.off{filter:brightness(.55) saturate(.7)}
+.dial .lab{position:absolute;font:600 .72rem var(--cond);color:var(--dialink)}
+.scale{position:relative;height:16px;margin:0 44px 0 36px;font:500 .74rem var(--cond);color:var(--dialink)}
+.scale span{position:absolute;transform:translateX(-50%);top:0}
+.track{position:relative;height:16px;margin:4px 44px 4px 36px;border-radius:8px;background:rgba(60,20,0,.22);box-shadow:inset 0 1px 2px rgba(0,0,0,.35)}
+.ind{position:absolute;top:2px;width:12px;height:12px;border-radius:2px;background:var(--red);transform:translateX(-50%);transition:left .35s ease;box-shadow:0 0 6px rgba(214,47,47,.7)}
+.dots{position:absolute;inset:0}
+.dots b{position:absolute;top:6px;width:4px;height:4px;border-radius:50%;background:var(--dialink);opacity:.45;transform:translateX(-50%)}
+.stripes{display:none;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
+.stripes div{height:12px;background:repeating-linear-gradient(180deg,var(--dial2) 0 2px,transparent 2px 5px)}
+.lcd{margin-top:6px;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:38px}
+.lcd .nm{font:600 1.15rem var(--ar);color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.lcd .st{font-size:.78rem;color:var(--muted)}
+.lcd .ch{font:600 1rem var(--cond);color:var(--dial);direction:ltr;flex:none;letter-spacing:.06em}
+/* presets */
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.key{border:0;border-radius:8px;padding:4px 2px;min-height:34px;cursor:pointer;background:linear-gradient(#3b3b3f,#2a2a2d);color:var(--white);
+  font:600 .72rem/1.2 var(--ar);box-shadow:0 3px 0 #000,inset 0 1px 0 rgba(255,255,255,.12);overflow:hidden}
+.key[aria-pressed="true"]{background:linear-gradient(var(--dial),var(--dial2));color:var(--dialink);transform:translateY(2px);box-shadow:0 1px 0 #000}
+.key:focus-visible,.btn:focus-visible,.wheel:focus-visible{outline:2px solid var(--dial);outline-offset:3px}
+/* grille */
+.grille{border-radius:18px;min-height:150px;position:relative;
+  background:radial-gradient(circle,#000 2.1px,transparent 2.6px) 0 0/9px 9px,linear-gradient(#2c2c2f,#1f1f21);
+  box-shadow:inset 0 0 0 3px #111,inset 0 6px 14px rgba(0,0,0,.6)}
+.grille.live::after{content:"";position:absolute;inset:0;border-radius:18px;animation:pulse 1.1s ease-in-out infinite;box-shadow:inset 0 0 26px rgba(240,138,75,.16)}
+@keyframes pulse{50%{opacity:.25}}
+.badge{position:absolute;bottom:12px;right:14px;font:600 .66rem var(--cond);letter-spacing:.2em;color:var(--dial);direction:ltr;opacity:.8}
+/* bottom controls */
+.ctrl{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:10px;align-items:center}
+.btn{border:0;cursor:pointer;border-radius:14px;height:48px;display:grid;place-items:center;font-size:1.3rem;color:var(--white);background:linear-gradient(#3b3b3f,#2a2a2d);box-shadow:0 4px 0 #000,inset 0 1px 0 rgba(255,255,255,.12)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.btn.pw{background:linear-gradient(#ee5a4a,#c3352a);font-size:1.5rem}
+.btn.pw.on{background:linear-gradient(#5cc46a,#2f9a3f)}
+.vol{grid-column:1/-1;display:flex;align-items:center;gap:10px;color:var(--muted);font:600 .7rem var(--cond);letter-spacing:.15em;direction:ltr}
+.vol input{flex:1;min-width:0;accent-color:var(--dial)}
+.vb{flex:none;width:38px;height:32px;border:0;border-radius:8px;cursor:pointer;color:var(--white);font:600 1.15rem var(--cond);background:linear-gradient(#3b3b3f,#2a2a2d);box-shadow:0 3px 0 #000}
+.vb:active{transform:translateY(2px);box-shadow:0 1px 0 #000}
+.vb:focus-visible{outline:2px solid var(--dial);outline-offset:2px}
+.vw{left:auto;right:8px}
+.vmeter{position:absolute;right:13px;top:calc(min(42%,300px) + 24px);width:16px;height:70px;border-radius:4px;background:#111;box-shadow:inset 0 0 0 2px #000;overflow:hidden;display:flex;align-items:flex-end}
+.vmeter i{display:block;width:100%;background:linear-gradient(var(--dial),#3fd45a);transition:height .15s}
+.wheel-l.vl{left:auto;right:4px;top:calc(min(42%,300px) + 104px)}
+.ver{position:absolute;top:4px;left:50%;transform:translateX(-50%);font:600 .62rem var(--ar);color:#6c6c72;white-space:nowrap}
+.led{position:absolute;top:7px;right:48px;width:7px;height:7px;border-radius:50%;background:#c3352a;box-shadow:0 0 6px 1px rgba(214,47,47,.8),inset 0 -2px 2px rgba(0,0,0,.3);transition:background .3s,box-shadow .3s;z-index:3}
+.led.on{background:#3fd45a;box-shadow:0 0 8px 2px rgba(63,212,90,.85),inset 0 -2px 2px rgba(0,0,0,.25)}
+.news{position:absolute;inset:8px;display:flex;flex-direction:column;gap:7px;overflow:hidden}
+.news .hd{display:flex;align-items:center;gap:8px;font:600 .78rem var(--ar);color:var(--dial);flex:none}
+.news .hd::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--red);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.2}}
+.news .hd small{margin-inline-start:auto;color:var(--muted);font:500 .68rem var(--ar)}
+.nlist{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.nlist::-webkit-scrollbar{display:none}
+.nlist .loop{display:flex;flex-direction:column;gap:6px}
+.ni{flex:0 0 auto;display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border-radius:10px;cursor:pointer;
+  background:rgba(14,14,15,.82);border:1px solid #2c2c30;backdrop-filter:blur(1px);touch-action:pan-y;user-select:none;
+  transition:transform .3s ease,opacity .3s ease}
+.ni.drag{transition:none}
+.ni.gone{opacity:0}
+.ni .src{font:600 .7rem var(--ar);color:var(--muted);margin-inline-end:6px}
+.ni .cat{font:600 .66rem var(--ar);border-radius:5px;padding:0 6px;margin-inline-end:6px;color:#fff;background:var(--red)}
+.ni .cat.sport{background:#2f9a3f}.ni .cat.fun{background:#7b4fc9}.ni .cat.tech{background:#2b6fd6}.ni .cat.sci{background:#138f8a}.ni .cat.health{background:#c2417f}.ni .cat.econ{background:#b8860b}
+.ni .tx{flex:1;min-width:0;font:500 .78rem/1.5 var(--ar);color:var(--white)}
+.ni .ok{flex:none;align-self:center;border:1px solid #3a3a3f;background:#232326;color:var(--white);border-radius:8px;font:600 .74rem var(--ar);padding:7px 10px;min-width:52px;cursor:pointer;touch-action:manipulation}
+.ni .ok:hover{color:#3fd45a;border-color:#3fd45a}
+.ni .ok:focus-visible{outline:2px solid var(--dial)}
+.ni:focus-visible{outline:2px solid var(--dial);outline-offset:2px}
+.nempty{color:var(--muted);font-size:.85rem;text-align:center;margin:auto;background:rgba(14,14,15,.82);padding:8px 12px;border-radius:10px}
+@media (max-height:640px){.key{min-height:32px;font-size:.68rem}.btn{height:42px}.radio{gap:7px}.dial .scale{font-size:.66rem}}
+@media (prefers-reduced-motion:reduce){.ind{transition:none}.grille.live::after{animation:none}.news .hd::before{animation:none}.ni{transition:none}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="radio">
+    <div class="led" id="led" role="img" aria-label="مطفّى"></div>
+    <div class="ant" aria-hidden="true"><i style="top:30%"></i><i style="top:55%"></i><i style="top:78%"></i></div>
+    <div class="wheel" id="wheel" tabindex="0" role="slider" aria-label="بكرة التوليف" aria-valuemin="1" aria-valuemax="12" aria-valuenow="1"><div class="rib" id="rib"></div></div>
+    <div class="wheel-l" aria-hidden="true">▲ TUNING ▼</div>
+    <div class="ver" title="رقم النسخة">نسخة 11</div>
+    <div class="wheel vw" id="vwheel" tabindex="0" role="slider" aria-label="دولاب الصوت" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><div class="rib" id="vrib"></div></div>
+    <div class="vmeter" aria-hidden="true"><i id="vlvl"></i></div>
+    <div class="wheel-l vl" aria-hidden="true">▲ VOLUME ▼</div>
+
+    <div class="win">
+      <div class="dial off" id="dial">
+        <span class="lab" style="left:6px;top:6px">FM</span><span class="lab" style="right:6px;top:6px">MHz</span>
+        <div class="scale"><span style="left:0%">87</span><span style="left:15%">90</span><span style="left:35%">94</span><span style="left:65%">100</span><span style="left:85%">105</span><span style="left:100%">108</span></div>
+        <div class="track"><div class="dots" id="dots"></div><div class="ind" id="ind" style="left:0%"></div></div>
+        <span class="lab" style="left:6px;bottom:7px">AM</span><span class="lab" style="right:6px;bottom:7px">kHz</span>
+        <div class="scale"><span style="left:0%">522</span><span style="left:18%">712</span><span style="left:52%">1080</span><span style="left:80%">1413</span><span style="left:100%">1620</span></div>
+      </div>
+      <div class="stripes" aria-hidden="true"><div></div><div></div></div>
+      <div class="lcd" aria-live="polite">
+        <div style="min-width:0"><div class="nm" id="nm">راديوهاتي</div><div class="st" id="st">اكبس زر التشغيل</div></div>
+        <div class="ch" id="ch">CH 01</div>
+      </div>
+    </div>
+
+    <div class="keys" id="keys" role="group" aria-label="المحطات"></div>
+
+    <div class="grille" id="grille" aria-hidden="true"><span class="badge">FM · AM</span></div>
+
+    <div class="ctrl">
+      <button class="btn" id="prev" aria-label="المحطة السابقة">⏮</button>
+      <button class="btn pw" id="pw" aria-label="تشغيل"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 7.2a8 8 0 1 0 11.4 0"/></svg></button>
+      <button class="btn" id="next" aria-label="المحطة التالية">⏭</button>
+
+    </div>
+
+  </div>
+</div>
+<audio id="audio" preload="none" playsinline></audio>
+
+<script>
+/* Each station: fixed stream links tried first, then a live lookup in the free Radio Browser directory,
+   so a station keeps working when its stream address changes. */
+const STATIONS=[
+  {short:"فرح FM",name:"فرح إف إم",find:[{name:"Farah FM"},{name:"فرح"}]},
+  {short:"BBC عربي",name:"BBC عربي",find:[{name:"BBC Arabic"},{name:"بي بي سي"}]},
+  {short:"مونت كارلو",name:"مونت كارلو الدولية",urls:["https://montecarlodoualiya128k.ice.infomaniak.ch/mc-doualiya.mp3"],find:[{name:"Monte Carlo Doualiya"}]},
+  {short:"العربية",name:"العربية",find:[{name:"Al Arabiya"},{name:"العربية"}],urls:["https://live.alarabiya.net/alarabiapublish/alarabiya.smil/playlist.m3u8"]},
+  {short:"الجزيرة",name:"الجزيرة",find:[{name:"Al Jazeera",language:"arabic"},{name:"الجزيرة"},{name:"Al Jazeera"}],urls:["https://live-hls-audio-web-aja.getaj.net/VOICE-AJA/index.m3u8"]},
+  {short:"TRT FM",name:"TRT FM",find:[{name:"TRT FM",countrycode:"TR"}],urls:["https://radio-trtfm.live.trt.com.tr/master_720.m3u8"]},
+  {short:"شام FM",name:"شام إف إم",find:[{name:"Sham FM"}]},
+  {short:"سوا",name:"راديو سوا",find:[{name:"Radio Sawa"}]},
+  {short:"MBC FM",name:"MBC FM",find:[{name:"MBC FM",countrycode:"SA"},{name:"MBC FM",language:"arabic"}]},
+  {short:"بانوراما FM",name:"بانوراما FM",find:[{name:"Panorama FM",language:"arabic"},{name:"Panorama FM",countrycode:"SA"},{name:"بانوراما"}]},
+  {short:"NDR 2",name:"NDR 2 · ألماني منوّع وأخبار",urls:["https://icecast.ndr.de/ndr/ndr2/niedersachsen/mp3/128/stream.mp3"],find:[{name:"NDR 2",countrycode:"DE"}]},
+  {short:"Kral FM",name:"Kral FM",find:[{name:"Kral FM",countrycode:"TR"},{name:"Kral Pop",countrycode:"TR"}]}
+];
+/* if a station can't be reached, the set swaps in one of these on its own */
+const BACKUPS=[
+  {short:"روتانا FM",name:"روتانا إف إم",find:[{name:"Rotana FM"}]},
+  {short:"المدينة FM",name:"المدينة إف إم",find:[{name:"Al Madina FM"},{name:"Almadina FM"}]},
+  {short:"راديو الشرق",name:"راديو الشرق",find:[{name:"Radio Orient"}]},
+  {short:"ميكس FM",name:"ميكس إف إم",find:[{name:"Mix FM Lebanon"},{name:"Mix FM",language:"arabic"}]},
+  {short:"صوت الغد",name:"صوت الغد",find:[{name:"Sawt El Ghad"},{name:"Sawt Al Ghad"}]},
+  {short:"نجوم FM",name:"نجوم إف إم",find:[{name:"Nogoum FM"}]},
+  {short:"راديو هلا",name:"راديو هلا",find:[{name:"Hala FM",language:"arabic"}]},
+  {short:"القرآن الكريم",name:"إذاعة القرآن الكريم",find:[{name:"Quran Radio"},{name:"Holy Quran Radio"}]}
+];
+const ORIG=STATIONS.slice();
+let subs=JSON.parse(localStorage.getItem("subs")||"{}");
+Object.keys(subs).forEach(i=>{const b=BACKUPS[subs[i]];if(b&&STATIONS[i])STATIONS[i]=Object.assign({sub:true},b)});
+const POS=[3,11.5,20,28.5,37,45.5,54,62.5,71,79.5,88,96]; // where each station sits on the FM scale (%)
+const FREQ=["88.4","89.9","91.4","92.9","94.4","95.9","97.4","98.9","100.4","102.0","103.6","107.3"];
+const API=["https://de1.api.radio-browser.info","https://de2.api.radio-browser.info","https://fi1.api.radio-browser.info"];
+const $=id=>document.getElementById(id),audio=$("audio");
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let idx=store.get("idx",0),on=false,hls=null,tuneT=null,token=0,good=store.get("good",{});
+
+$("dots").innerHTML=POS.map(p=>`<b style="left:${p}%"></b>`).join("");
+function drawKeys(){$("keys").innerHTML=STATIONS.map((s,i)=>`<button class="key" data-i="${i}" aria-pressed="${on&&i===idx}">${s.short}</button>`).join("")}
+drawKeys();
+
+async function api(path){for(const b of API){try{const r=await fetch(b+path);if(r.ok)return await r.json()}catch(e){}}return []}
+async function lookup(s){
+  const out=[];
+  for(const f of s.find||[]){
+    const q=new URLSearchParams(Object.assign({hidebroken:"true",order:"clickcount",reverse:"true",limit:"15"},f));
+    const list=(await api("/json/stations/search?"+q)).filter(x=>x.lastcheckok===1&&/^https:/.test(x.url_resolved||""));
+    list.forEach(x=>out.push(x.url_resolved));
+    if(out.length>=3)break;
+  }
+  return out;
+}
+function stopAll(){if(hls){hls.destroy();hls=null}audio.pause();audio.removeAttribute("src");audio.load()}
+function tryUrl(url,my){
+  return new Promise(res=>{
+    if(my!==token)return res(false);
+    stopAll();
+    const done=v=>{clearTimeout(t);audio.removeEventListener("playing",okf);audio.removeEventListener("error",bad);res(v)};
+    const okf=()=>done(true),bad=()=>done(false);
+    const t=setTimeout(()=>done(false),9000);
+    audio.addEventListener("playing",okf);audio.addEventListener("error",bad);
+    if(/\.m3u8/i.test(url)&&!audio.canPlayType("application/vnd.apple.mpegurl")&&window.Hls&&Hls.isSupported()){
+      hls=new Hls();hls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal)done(false)});hls.loadSource(url);hls.attachMedia(audio);
+      hls.on(Hls.Events.MANIFEST_PARSED,()=>audio.play().catch(()=>done(false)));
+    }else{audio.src=url;audio.play().catch(()=>done(false))}
+  });
+}
+async function play(i){
+  const my=++token,s=STATIONS[i];
+  $("st").textContent="عم يتصل…";$("grille").classList.remove("live");
+  const cands=[];
+  if(good[i])cands.push(good[i]);
+  (s.urls||[]).forEach(u=>cands.includes(u)||cands.push(u));
+  for(const u of cands){if(await tryUrl(u,my)){good[i]=u;store.set("good",good);return}if(my!==token)return}
+  $("st").textContent="عم دوّر على رابط تاني…";
+  const more=(await lookup(s)).filter(u=>!cands.includes(u));
+  for(const u of more){if(my!==token)return;if(await tryUrl(u,my)){good[i]=u;store.set("good",good);return}}
+  if(my!==token)return;
+  // nothing worked: try backup stations not already on the keys, and keep the first one that plays
+  const failed=s.short;
+  for(let b=0;b<BACKUPS.length;b++){
+    if(my!==token)return;
+    if(STATIONS.some(x=>x.short===BACKUPS[b].short))continue;
+    $("st").textContent=failed+" ما ردّت، عم جرّب "+BACKUPS[b].short+"…";
+    const urls=await lookup(BACKUPS[b]);
+    for(const u of urls){if(my!==token)return;if(await tryUrl(u,my)){
+      STATIONS[i]=Object.assign({sub:true},BACKUPS[b]);subs[i]=b;good[i]=u;
+      try{localStorage.setItem("subs",JSON.stringify(subs))}catch(e){}store.set("good",good);
+      drawKeys();show(i,false);$("st").textContent="● "+failed+" ما اشتغلت، حطيت "+BACKUPS[b].short+" بدالها";return}}
+  }
+  if(my===token){$("st").textContent="ما في إنترنت كافي هلق، جرّب بعد شوي";stopAll()}
+}
+audio.addEventListener("playing",()=>{$("led").classList.add("on");$("led").setAttribute("aria-label","شغّال");if(!/بدالها/.test($("st").textContent))$("st").textContent="● على الهوا";$("grille").classList.add("live")});
+audio.addEventListener("pause",()=>{$("led").classList.remove("on");$("led").setAttribute("aria-label","مطفّى")});
+audio.addEventListener("error",()=>{$("led").classList.remove("on")});
+audio.addEventListener("waiting",()=>{if(on)$("st").textContent="عم يحمّل…"});
+
+function show(i,autoplay){
+  idx=(i+STATIONS.length)%STATIONS.length;store.set("idx",idx);
+  const s=STATIONS[idx];
+  $("ind").style.left=POS[idx]+"%";
+  $("nm").textContent=s.name;$("ch").textContent="CH "+String(idx+1).padStart(2,"0")+" · "+FREQ[idx];
+  document.querySelectorAll(".key").forEach(k=>k.setAttribute("aria-pressed",String(+k.dataset.i===idx&&on)));
+  $("rib").style.backgroundPosition="0 "+(idx*11)+"px";
+  $("wheel").setAttribute("aria-valuenow",idx+1);
+  if("mediaSession" in navigator){
+    navigator.mediaSession.metadata=new MediaMetadata({title:s.name,artist:"راديوهاتي"});
+    navigator.mediaSession.setActionHandler("nexttrack",()=>show(idx+1,true));
+    navigator.mediaSession.setActionHandler("previoustrack",()=>show(idx-1,true));
+  }
+  if(on&&autoplay){clearTimeout(tuneT);token++;stopAll();$("st").textContent="…";tuneT=setTimeout(()=>play(idx),450)}
+}
+function power(v){
+  on=v;$("pw").classList.toggle("on",on);$("pw").setAttribute("aria-label",on?"إطفاء":"تشغيل");$("dial").classList.toggle("off",!on);
+  if(on){show(idx,false);play(idx)}else{token++;stopAll();$("grille").classList.remove("live");$("st").textContent="مطفّى";show(idx,false)}
+}
+$("pw").onclick=()=>power(!on);
+$("next").onclick=()=>show(idx+1,true);$("prev").onclick=()=>show(idx-1,true);
+function setVol(v,show){v=Math.max(0,Math.min(1,Math.round(v*20)/20));audio.volume=v;store.set("vol",v);
+  $("vwheel").setAttribute("aria-valuenow",Math.round(v*100));$("vlvl").style.height=(v*100)+"%";
+  if(show){const n=Math.round(v*10);$("st").textContent="الصوت  "+"▮".repeat(n)+"▯".repeat(10-n);clearTimeout(setVol.t);setVol.t=setTimeout(()=>{if(on)$("st").textContent=audio.paused?"…":"● على الهوا";else $("st").textContent="مطفّى"},1500)}}
+// roll the volume wheel: up = louder
+(function(){const w=$("vwheel");let y=null,acc=0,off=0;
+  w.addEventListener("pointerdown",e=>{y=e.clientY;acc=0;w.setPointerCapture(e.pointerId)});
+  w.addEventListener("pointermove",e=>{if(y===null)return;const d=e.clientY-y;y=e.clientY;acc+=d;off+=d;$("vrib").style.backgroundPosition="0 "+off+"px";
+    while(acc<-14){acc+=14;setVol(audio.volume+.05,true)}while(acc>14){acc-=14;setVol(audio.volume-.05,true)}});
+  ["pointerup","pointercancel"].forEach(t=>w.addEventListener(t,()=>{y=null}));
+  w.addEventListener("wheel",e=>{e.preventDefault();setVol(audio.volume+(e.deltaY<0?.05:-.05),true)},{passive:false});
+  w.addEventListener("keydown",e=>{if(e.key==="ArrowUp"||e.key==="ArrowRight"){e.preventDefault();setVol(audio.volume+.05,true)}if(e.key==="ArrowDown"||e.key==="ArrowLeft"){e.preventDefault();setVol(audio.volume-.05,true)}});})();
+setVol(store.get("vol",1));
+$("keys").onclick=e=>{const k=e.target.closest(".key");if(!k)return;const i=+k.dataset.i;if(!on){idx=i;power(true)}else show(i,true)};
+// drag along the dial to tune
+(function(){const d=$("dial");let drag=false;
+  const at=x=>{const r=d.getBoundingClientRect();const p=(x-r.left)/r.width*100;let best=0;POS.forEach((v,i)=>{if(Math.abs(v-p)<Math.abs(POS[best]-p))best=i});if(best!==idx)show(best,true)};
+  d.addEventListener("pointerdown",e=>{drag=true;d.setPointerCapture(e.pointerId);if(!on){power(true)}at(e.clientX)});
+  d.addEventListener("pointermove",e=>{if(drag)at(e.clientX)});
+  ["pointerup","pointercancel"].forEach(t=>d.addEventListener(t,()=>drag=false));})();
+// roll the side wheel up/down
+(function(){const w=$("wheel");let y=null,acc=0;
+  w.addEventListener("pointerdown",e=>{y=e.clientY;acc=0;w.setPointerCapture(e.pointerId)});
+  w.addEventListener("pointermove",e=>{if(y===null)return;acc+=e.clientY-y;y=e.clientY;$("rib").style.backgroundPosition="0 "+(idx*11+acc)+"px";
+    while(acc>28){acc-=28;show(idx+1,true)}while(acc<-28){acc+=28;show(idx-1,true)}});
+  ["pointerup","pointercancel"].forEach(t=>w.addEventListener(t,()=>{y=null}));
+  w.addEventListener("wheel",e=>{e.preventDefault();show(idx+(e.deltaY>0?1:-1),true)},{passive:false});
+  w.addEventListener("keydown",e=>{if(e.key==="ArrowDown"||e.key==="ArrowRight"){e.preventDefault();show(idx+1,true)}if(e.key==="ArrowUp"||e.key==="ArrowLeft"){e.preventDefault();show(idx-1,true)}});})();
+if(idx>=STATIONS.length)idx=0;
+show(idx,false);
+/* app version: no service worker */
+</script>
+<!-- TV remote (D-pad) navigation: arrows move between buttons, OK presses -->
+<style>
+.tvnav-on button:focus,.tvnav-on a:focus,.tvnav-on input:focus{outline:4px solid #ffd400!important;outline-offset:3px!important;box-shadow:0 0 0 7px rgba(255,212,0,.35)!important;position:relative;z-index:5}
+</style>
+<script>
+(function(){
+  var SEL='button:not([hidden]):not([disabled]),a[href]:not([hidden]),input:not([hidden]):not([type=hidden]),[tabindex]:not([tabindex="-1"])';
+  function vis(e){if(e.closest('[hidden]'))return false;var r=e.getBoundingClientRect();if(r.width<2||r.height<2)return false;var s=getComputedStyle(e);return s.visibility!=='hidden'&&s.display!=='none'}
+  function all(){return Array.prototype.filter.call(document.querySelectorAll(SEL),vis)}
+  function c(r){return{x:r.left+r.width/2,y:r.top+r.height/2}}
+  function move(dir){
+    var list=all();if(!list.length)return;
+    var cur=document.activeElement;
+    if(!cur||cur===document.body||list.indexOf(cur)<0){list[0].focus();return}
+    var a=cur.getBoundingClientRect(),ac=c(a),best=null,bs=1e9;
+    list.forEach(function(e){if(e===cur)return;var b=e.getBoundingClientRect(),bc=c(b),dx=bc.x-ac.x,dy=bc.y-ac.y,main,side;
+      if(dir==='ArrowUp'){if(b.bottom>a.top+4&&dy>=-2)return;main=-dy;side=Math.abs(dx)}
+      else if(dir==='ArrowDown'){if(b.top<a.bottom-4&&dy<=2)return;main=dy;side=Math.abs(dx)}
+      else if(dir==='ArrowLeft'){if(dx>=-2)return;main=-dx;side=Math.abs(dy)}
+      else{if(dx<=2)return;main=dx;side=Math.abs(dy)}
+      var sc=main+side*2.5;if(sc<bs){bs=sc;best=e}});
+    if(best){best.focus();best.scrollIntoView({block:'nearest',inline:'nearest'})}
+  }
+  document.addEventListener('keydown',function(ev){
+    var k=ev.key;
+    if(k==='ArrowUp'||k==='ArrowDown'||k==='ArrowLeft'||k==='ArrowRight'){
+      var t=document.activeElement;if(t&&t.tagName==='INPUT'&&(k==='ArrowLeft'||k==='ArrowRight'))return;
+      document.documentElement.classList.add('tvnav-on');ev.preventDefault();move(k)}
+    else if(k==='Enter'){var t2=document.activeElement;if(t2&&(t2.tagName==='BUTTON'||t2.tagName==='A')){ev.preventDefault();t2.click()}}
+  },true);
+  window.tvRemote=function(cmd){var id={up:'prev',down:'next'}[cmd];var e=cmd==='power'?(document.getElementById('power')||document.getElementById('pw')):document.getElementById(id);if(e)e.click()};
+})();
+</script>
+</body>
+</html>
